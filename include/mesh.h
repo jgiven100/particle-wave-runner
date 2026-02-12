@@ -1,6 +1,7 @@
 #ifndef PWR_MESH_H
 #define PWR_MESH_H
 
+#include <cassert>
 #include <cstddef>
 
 #include "mesh_base.h"
@@ -15,7 +16,7 @@ class Mesh : public MeshBase {
     // Constructor
     // ------------------------------------------------------------------------
     Mesh(double x_min, double y_min, double z_min, double x_max, double y_max,
-         double z_max, size_t nx, size_t ny, size_t nz)
+         double z_max, std::size_t nx, std::size_t ny, std::size_t nz)
         : x_min_(x_min),
           y_min_(y_min),
           z_min_(z_min),
@@ -25,23 +26,20 @@ class Mesh : public MeshBase {
           nx_(nx),
           ny_(ny),
           nz_(nz) {
-        // Initialized, partition, and check mesh
-        InitializeMesh_();
-        PartitionMesh_();
-        CheckMesh_();
+        SetupMesh_();
     }
 
     // ------------------------------------------------------------------------
     // Constructor delegation
     // ------------------------------------------------------------------------
-    Mesh(double x_max, double y_max, double z_max, size_t nx, size_t ny,
-         size_t nz)
+    Mesh(double x_max, double y_max, double z_max, std::size_t nx,
+         std::size_t ny, std::size_t nz)
         : Mesh(0., 0., 0., x_max, y_max, z_max, nx, ny, nz) {}
 
     // ------------------------------------------------------------------------
     // Constructor delegation
     // ------------------------------------------------------------------------
-    Mesh(size_t nx, size_t ny, size_t nz)
+    Mesh(std::size_t nx, std::size_t ny, std::size_t nz)
         : Mesh(0., 0., 0., 1., 1., 1., nx, ny, nz) {}
 
     // ------------------------------------------------------------------------
@@ -59,7 +57,28 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     Mesh& operator=(const Mesh&) = delete;
 
+    // ------------------------------------------------------------------------
+    // Getters
+    // ------------------------------------------------------------------------
+
+    // Get number of elements partition
+    std::size_t GetNumElemPartition() const override {
+        assert(setup_complete_);
+        return num_elem_partition_;
+    }
+
+    // Get number of elements ghost
+    std::size_t GetNumElemGhost() const override {
+        assert(setup_complete_);
+        return num_elem_ghost_;
+    }
+
    private:
+    // ------------------------------------------------------------------------
+    // Setup mesh
+    // ------------------------------------------------------------------------
+    void SetupMesh_();
+
     // ------------------------------------------------------------------------
     // Initialize mesh
     // ------------------------------------------------------------------------
@@ -74,6 +93,9 @@ class Mesh : public MeshBase {
     // Check mesh
     // ------------------------------------------------------------------------
     void CheckMesh_();
+
+    // MeshCheck_ has been successfully called
+    bool setup_complete_ = false;
 
     // Minimum x-dir
     double x_min_;
@@ -94,13 +116,31 @@ class Mesh : public MeshBase {
     double z_max_;
 
     // Number of elements x-dir
-    size_t nx_;
+    std::size_t nx_;
 
     // Number of elements y-dir
-    size_t ny_;
+    std::size_t ny_;
 
     // Number of elements z-dir
-    size_t nz_;
+    std::size_t nz_;
+
+    // Number of elements total
+    std::size_t num_elem_;
+
+    // Number of elements partition
+    std::size_t num_elem_partition_;
+
+    // Number of elements ghost
+    std::size_t num_elem_ghost_;
+
+    // Element size x-dir
+    double dx_;
+
+    // Element size y-dir
+    double dy_;
+
+    // Element size z-dir
+    double dz_;
 };
 
 }  // namespace pwr

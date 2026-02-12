@@ -24,9 +24,9 @@ int main(int argc, char **argv) {
         const double x_max = 8.;
         const double y_max = 9.;
         const double z_max = 10.;
-        const size_t nx = 100;
-        const size_t ny = 200;
-        const size_t nz = 300;
+        const std::size_t nx = 100;
+        const std::size_t ny = 200;
+        const std::size_t nz = 300;
 
         std::cout << "MESH 1" << std::endl;
         std::shared_ptr<pwr::Mesh> mesh0 = std::make_shared<pwr::Mesh>(
