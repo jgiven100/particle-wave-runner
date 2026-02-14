@@ -2,6 +2,8 @@
 #define PWR_MESH_BASE_H
 
 #include <cstddef>
+#include <limits>
+#include <vector>
 
 namespace pwr {
 
@@ -19,6 +21,12 @@ class MeshBase {
 
     // Get number of elements ghost
     virtual std::size_t GetNumElemGhost() const = 0;
+
+    // Get element-wise connectivity
+    virtual const std::vector<std::size_t>& GetElemConnectivity() const = 0;
+
+    // Get nodal coordinates
+    virtual const std::vector<double>& GetNodalCoordinates() const = 0;
 };
 }  // namespace pwr
 

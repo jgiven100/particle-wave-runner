@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <vector>
 
 #include "mesh_base.h"
 
@@ -73,6 +74,18 @@ class Mesh : public MeshBase {
         return num_elem_ghost_;
     }
 
+    // Get element-wise connectivity
+    const std::vector<std::size_t>& GetElemConnectivity() const override {
+        assert(setup_complete_);
+        return conn_;
+    }
+
+    // Get nodal coordinates
+    const std::vector<double>& GetNodalCoordinates() const override {
+        assert(setup_complete_);
+        return nodal_coords_;
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup mesh
@@ -124,13 +137,13 @@ class Mesh : public MeshBase {
     // Number of elements z-dir
     std::size_t nz_;
 
-    // Number of elements total
+    // Total number of elements in the mesh
     std::size_t num_elem_;
 
-    // Number of elements partition
+    // Number of elements owned by this partition
     std::size_t num_elem_partition_;
 
-    // Number of elements ghost
+    // Number of ghost elements for this partition
     std::size_t num_elem_ghost_;
 
     // Element size x-dir
@@ -141,6 +154,14 @@ class Mesh : public MeshBase {
 
     // Element size z-dir
     double dz_;
+
+    // Element-wise connectivity with size 8*TODO with
+    // convention TODO
+    std::vector<std::size_t> conn_;
+
+    // Nodal coordinates with size 3*TODO with
+    // convetion [x0, y0, z0, x1, y1, z1, ..., xN, yN, zN]
+    std::vector<double> nodal_coords_;
 };
 
 }  // namespace pwr
