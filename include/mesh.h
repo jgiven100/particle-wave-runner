@@ -107,6 +107,17 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     void CheckMesh_();
 
+    // ------------------------------------------------------------------------
+    // Set partitions per direction
+    // ------------------------------------------------------------------------
+    void SetPartitionsPerDirection_(std::vector<std::size_t>& partitions_start,
+                                    std::vector<std::size_t>& partitions_size);
+
+    // ------------------------------------------------------------------------
+    // Set number of elements
+    // ------------------------------------------------------------------------
+    void SetNumberElements_(const std::vector<std::size_t>& partitions_size);
+
     // MeshCheck_ has been successfully called
     bool setup_complete_ = false;
 
@@ -137,7 +148,7 @@ class Mesh : public MeshBase {
     // Number of elements z-dir
     std::size_t nz_;
 
-    // Total number of elements in the mesh
+    // Total number of elements in the mesh (all partitions)
     std::size_t num_elem_;
 
     // Number of elements owned by this partition

@@ -2,7 +2,6 @@
 #define PWR_MESH_BASE_H
 
 #include <cstddef>
-#include <limits>
 #include <vector>
 
 namespace pwr {
