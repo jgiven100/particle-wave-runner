@@ -116,36 +116,53 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     // Set number of elements
     // ------------------------------------------------------------------------
-    void SetNumberElements_(const std::vector<std::size_t>& partitions_size);
+    void SetNumberElements_(const std::vector<std::size_t>& partitions_start,
+                            const std::vector<std::size_t>& partitions_size);
+
+    // ------------------------------------------------------------------------
+    // Set elements global id
+    // ------------------------------------------------------------------------
+    void SetElementsGlobalId_(const std::vector<std::size_t>& partitions_start,
+                              const std::vector<std::size_t>& partitions_size);
+
+    // ------------------------------------------------------------------------
+    // Set elements neighborhood
+    // ------------------------------------------------------------------------
+    void SetElementsNeighborhood_();
+
+    // ------------------------------------------------------------------------
+    // Set elements connectivity
+    // ------------------------------------------------------------------------
+    void SetElementsConnectivity_();
 
     // MeshCheck_ has been successfully called
     bool setup_complete_ = false;
 
-    // Minimum x-dir
+    // Minimum global x-dir
     double x_min_;
 
-    // Minimum y-dir
+    // Minimum global y-dir
     double y_min_;
 
-    // Minimum z-dir
+    // Minimum global z-dir
     double z_min_;
 
-    // Maximum x-dir
+    // Maximum global x-dir
     double x_max_;
 
-    // Maximum y-dir
+    // Maximum global y-dir
     double y_max_;
 
-    // Maximum z-dir
+    // Maximum global z-dir
     double z_max_;
 
-    // Number of elements x-dir
+    // Number of global elements x-dir
     std::size_t nx_;
 
-    // Number of elements y-dir
+    // Number of global elements y-dir
     std::size_t ny_;
 
-    // Number of elements z-dir
+    // Number of global elements z-dir
     std::size_t nz_;
 
     // Total number of elements in the mesh (all partitions)
@@ -157,6 +174,9 @@ class Mesh : public MeshBase {
     // Number of ghost elements for this partition
     std::size_t num_elem_ghost_;
 
+    // Number of partition + ghost elements
+    std::size_t num_elem_total_;
+
     // Element size x-dir
     double dx_;
 
@@ -166,12 +186,22 @@ class Mesh : public MeshBase {
     // Element size z-dir
     double dz_;
 
-    // Element-wise connectivity with size 8*TODO with
-    // convention TODO
+    // Neighborhood width
+    std::size_t neighborhood_width_ = 1;  // p=1 B-Spline (linear)
+    // std::size_t neighborhood_width_ = 2; // p=2 B-Spline (quadratic)
+    // std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
+    // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
+
+    // Element global id with size (num_elem_partition_ + num_elem_ghost_)
+    std::vector<std::size_t> elem_id_global_;
+
+    // Element neighborhood with size (TODO)
+    std::vector<std::size_t> elem_neighborhood_;
+
+    // Element connectivity with size (TODO)
     std::vector<std::size_t> conn_;
 
-    // Nodal coordinates with size 3*TODO with
-    // convetion [x0, y0, z0, x1, y1, z1, ..., xN, yN, zN]
+    // Nodal coordinates with size 3 * (num_elem_partition_ + num_elem_ghost_)
     std::vector<double> nodal_coords_;
 };
 
