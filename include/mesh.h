@@ -122,8 +122,7 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     // Set elements global id
     // ------------------------------------------------------------------------
-    void SetElementsGlobalId_(const std::vector<std::size_t>& partitions_start,
-                              const std::vector<std::size_t>& partitions_size);
+    void SetElementsGlobalId_();
 
     // ------------------------------------------------------------------------
     // Set elements neighborhood
@@ -138,52 +137,106 @@ class Mesh : public MeshBase {
     // MeshCheck_ has been successfully called
     bool setup_complete_ = false;
 
-    // Minimum global x-dir
+    // Minimum global x-direction
     double x_min_;
 
-    // Minimum global y-dir
+    // Minimum global y-direction
     double y_min_;
 
-    // Minimum global z-dir
+    // Minimum global z-direction
     double z_min_;
 
-    // Maximum global x-dir
+    // Maximum global x-direction
     double x_max_;
 
-    // Maximum global y-dir
+    // Maximum global y-direction
     double y_max_;
 
-    // Maximum global z-dir
+    // Maximum global z-direction
     double z_max_;
 
-    // Number of global elements x-dir
+    // Number of global elements x-direction
     std::size_t nx_;
 
-    // Number of global elements y-dir
+    // Number of global elements y-direction
     std::size_t ny_;
 
-    // Number of global elements z-dir
+    // Number of global elements z-direction
     std::size_t nz_;
 
     // Total number of elements in the mesh (all partitions)
     std::size_t num_elem_;
 
+    // Starting index of partition elements x-direction
+    std::size_t index_x_partition_0_;
+
+    // Starting index of partition elements y-direction
+    std::size_t index_y_partition_0_;
+
+    // Starting index of partition elements z-direction
+    std::size_t index_z_partition_0_;
+
+    // Ending index of partition elements x-direction
+    std::size_t index_x_partition_f_;
+
+    // Ending index of partition elements y-direction
+    std::size_t index_y_partition_f_;
+
+    // Ending index of partition elements z-direction
+    std::size_t index_z_partition_f_;
+
+    // Number of partition elements x-direction
+    std::size_t nx_partition_;
+
+    // Number of partition elements y-direction
+    std::size_t ny_partition_;
+
+    // Number of partition elements z-direction
+    std::size_t nz_partition_;
+
     // Number of elements owned by this partition
     std::size_t num_elem_partition_;
+
+    // Number of ghost elements at start x-direction
+    std::size_t nx_ghost_0_;
+
+    // Number of ghost elements at start y-direction
+    std::size_t ny_ghost_0_;
+
+    // Number of ghost elements at start z-direction
+    std::size_t nz_ghost_0_;
+
+    // Number of ghost elements at end x-direction
+    std::size_t nx_ghost_f_;
+
+    // Number of ghost elements at end y-direction
+    std::size_t ny_ghost_f_;
+
+    // Number of ghost elements at end z-direction
+    std::size_t nz_ghost_f_;
 
     // Number of ghost elements for this partition
     std::size_t num_elem_ghost_;
 
+    // Number of partition + ghost elements x-direction
+    std::size_t nx_total_;
+
+    // Number of partition + ghost elements y-direction
+    std::size_t ny_total_;
+
+    // Number of partition + ghost elements z-direction
+    std::size_t nz_total_;
+
     // Number of partition + ghost elements
     std::size_t num_elem_total_;
 
-    // Element size x-dir
+    // Element size x-direction
     double dx_;
 
-    // Element size y-dir
+    // Element size y-direction
     double dy_;
 
-    // Element size z-dir
+    // Element size z-direction
     double dz_;
 
     // Neighborhood width
@@ -193,7 +246,14 @@ class Mesh : public MeshBase {
     // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
 
     // Element global id with size (num_elem_partition_ + num_elem_ghost_)
+    // Index is local element id
+    // Value is global element id
     std::vector<std::size_t> elem_id_global_;
+
+    // Element local id with size num_elem_
+    // Index is gloabl element id
+    // Value is local element id
+    std::vector<std::size_t> elem_id_local_;
 
     // Element neighborhood with size (TODO)
     std::vector<std::size_t> elem_neighborhood_;

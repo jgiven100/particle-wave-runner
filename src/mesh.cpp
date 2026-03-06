@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
+#include <iostream>  // TODO remove me
 #include <limits>
 #include <numeric>
 
@@ -61,7 +61,7 @@ void Mesh::PartitionMesh_() {
     SetNumberElements_(partitions_start, partitions_size);
 
     // Set elements global id
-    SetElementsGlobalId_(partitions_start, partitions_size);
+    SetElementsGlobalId_();
 
     // Set elements neighborhood
     SetElementsNeighborhood_();
@@ -244,89 +244,105 @@ void Mesh::SetNumberElements_(const std::vector<std::size_t> &partitions_start,
     // Get rank
     const int rank = pwr::MPIUtilities::Rank();
 
-    // Grab number of elements per direction in the partitions
-    const std::size_t nx = partitions_size[3 * rank + 0];
-    const std::size_t ny = partitions_size[3 * rank + 1];
-    const std::size_t nz = partitions_size[3 * rank + 2];
+    // Set number of elements per direction in the partitions
+    nx_partition_ = partitions_size[3 * rank + 0];
+    ny_partition_ = partitions_size[3 * rank + 1];
+    nz_partition_ = partitions_size[3 * rank + 2];
+
+    // Sanity check: partition size per direction is less than or equal
+    // to global size per direction
+    assert(nx_partition_ <= nx_);
+    assert(ny_partition_ <= ny_);
+    assert(nz_partition_ <= nz_);
 
     // Set number of elements in the partition
-    num_elem_partition_ = nx * ny * nz;
+    num_elem_partition_ = nx_partition_ * ny_partition_ * nz_partition_;
 
     // Sanity check: no zero-element partitions allowed
     assert(num_elem_partition_ > 0);
 
-    // Grab starting element index per direction in the partition
-    const std::size_t nx_0 = partitions_start[3 * rank + 0];
-    const std::size_t ny_0 = partitions_start[3 * rank + 1];
-    const std::size_t nz_0 = partitions_start[3 * rank + 2];
+    // Set starting element index per direction in the partition
+    index_x_partition_0_ = partitions_start[3 * rank + 0];
+    index_y_partition_0_ = partitions_start[3 * rank + 1];
+    index_z_partition_0_ = partitions_start[3 * rank + 2];
+
+    // Sanity check: partition starting index is less than global
+    // size per direction
+    assert(index_x_partition_0_ < nx_);
+    assert(index_y_partition_0_ < ny_);
+    assert(index_z_partition_0_ < nz_);
 
     // Set final element index per direction in the partition
-    const std::size_t nx_f = nx_0 + nx;
-    const std::size_t ny_f = ny_0 + ny;
-    const std::size_t nz_f = nz_0 + nz;
+    index_x_partition_f_ = index_x_partition_0_ + nx_partition_ - 1;
+    index_y_partition_f_ = index_y_partition_0_ + ny_partition_ - 1;
+    index_z_partition_f_ = index_z_partition_0_ + nz_partition_ - 1;
 
-    // Set element neighboorhood width (depending on basis function order)
+    // Sanity check: partition final index is less than global
+    // size per direction
+    assert(index_x_partition_f_ < nx_);
+    assert(index_y_partition_f_ < ny_);
+    assert(index_z_partition_f_ < nz_);
+
+    // Grab neighborhood width
     const std::size_t w = neighborhood_width_;
 
-    // Number of ghost element rows at the start of this block
-    const std::size_t nx_ghost_0 = std::min(w, nx_0);
-    const std::size_t ny_ghost_0 = std::min(w, ny_0);
-    const std::size_t nz_ghost_0 = std::min(w, nz_0);
+    // Set number of ghost elements at the start of this block
+    nx_ghost_0_ = std::min(w, index_x_partition_0_);
+    ny_ghost_0_ = std::min(w, index_y_partition_0_);
+    nz_ghost_0_ = std::min(w, index_z_partition_0_);
 
-    // Number of ghost element rows at the end of this block
-    const std::size_t nx_ghost_f = std::min(w, nx_ - nx_f);
-    const std::size_t ny_ghost_f = std::min(w, ny_ - ny_f);
-    const std::size_t nz_ghost_f = std::min(w, nz_ - nz_f);
+    // Set number of ghost element at the end of this block
+    nx_ghost_f_ = std::min(w, nx_ - index_x_partition_f_ - 1);
+    ny_ghost_f_ = std::min(w, ny_ - index_y_partition_f_ - 1);
+    nz_ghost_f_ = std::min(w, nz_ - index_z_partition_f_ - 1);
 
-    // Set number of elements per direction (partition + ghost)
-    const std::size_t nx_total = nx + nx_ghost_0 + nx_ghost_f;
-    const std::size_t ny_total = ny + ny_ghost_0 + ny_ghost_f;
-    const std::size_t nz_total = nz + nz_ghost_0 + nz_ghost_f;
+    // Set total number of elements per direction (partition + ghost)
+    nx_total_ = nx_partition_ + nx_ghost_0_ + nx_ghost_f_;
+    ny_total_ = ny_partition_ + ny_ghost_0_ + ny_ghost_f_;
+    nz_total_ = nz_partition_ + nz_ghost_0_ + nz_ghost_f_;
+
+    // Sanity check: total partition size per direction is less than or equal
+    // to global size per direction
+    assert(nx_total_ <= nx_);
+    assert(ny_total_ <= ny_);
+    assert(nz_total_ <= nz_);
+
+    // Set total number of elements (partition + ghost)
+    num_elem_total_ = nx_total_ * ny_total_ * nz_total_;
 
     // Set number of ghost elements
-    num_elem_ghost_ = (nx_total * ny_total * nz_total) - (nx * ny * nz);
-
-    // Set number of partition + ghost elements
-    num_elem_total_ = num_elem_partition_ + num_elem_ghost_;
+    num_elem_ghost_ = num_elem_total_ - num_elem_partition_;
 
 }  // Mesh::SetNumberElements_
 
 // ----------------------------------------------------------------------------
 // Set elements global id
 // ----------------------------------------------------------------------------
-void Mesh::SetElementsGlobalId_(
-    const std::vector<std::size_t> &partitions_start,
-    const std::vector<std::size_t> &partitions_size) {
-    // Get rank
-    const int rank = pwr::MPIUtilities::Rank();
-
-    // Grab number of elements per direction in the partitions
-    const std::size_t nx = partitions_size[3 * rank + 0];
-    const std::size_t ny = partitions_size[3 * rank + 1];
-    const std::size_t nz = partitions_size[3 * rank + 2];
-
-    // Grab starting element index per direction in the partition
-    const std::size_t nx_0 = partitions_start[3 * rank + 0];
-    const std::size_t ny_0 = partitions_start[3 * rank + 1];
-    const std::size_t nz_0 = partitions_start[3 * rank + 2];
-
-    // Set final element index per direction in the partition
-    const std::size_t nx_f = nx_0 + nx;
-    const std::size_t ny_f = ny_0 + ny;
-    const std::size_t nz_f = nz_0 + nz;
-
-    // Set element neighboorhood width (depending on basis function order)
-    const std::size_t w = neighborhood_width_;
-
+void Mesh::SetElementsGlobalId_() {
     // Starting index per direction (including ghost elements)
-    const std::size_t nx_start = nx_0 - std::min(w, nx_0);
-    const std::size_t ny_start = ny_0 - std::min(w, ny_0);
-    const std::size_t nz_start = nz_0 - std::min(w, nz_0);
+    // Underflow safe: nx_ghost_0_ = std::min(w, index_x_partition_0_)
+    // Underflow safe: ny_ghost_0_ = std::min(w, index_y_partition_0_)
+    // Underflow safe: nz_ghost_0_ = std::min(w, index_z_partition_0_)
+    const std::size_t index_x_0 = index_x_partition_0_ - nx_ghost_0_;
+    const std::size_t index_y_0 = index_y_partition_0_ - ny_ghost_0_;
+    const std::size_t index_z_0 = index_z_partition_0_ - nz_ghost_0_;
 
-    // Edning index per direction (including ghost elements)
-    const std::size_t nx_end = nx_f + std::min(w, nx_ - nx_f);
-    const std::size_t ny_end = ny_f + std::min(w, ny_ - ny_f);
-    const std::size_t nz_end = nz_f + std::min(w, nz_ - nz_f);
+    // Sanity check: partition + ghost starting index is less than global
+    // size per direction
+    assert(index_x_0 < nx_);
+    assert(index_y_0 < ny_);
+    assert(index_z_0 < nz_);
+
+    // Ending index per direction (including ghost elements)
+    const std::size_t index_x_f = index_x_partition_f_ + nx_ghost_f_;
+    const std::size_t index_y_f = index_y_partition_f_ + ny_ghost_f_;
+    const std::size_t index_z_f = index_z_partition_f_ + nz_ghost_f_;
+
+    // Sanity check: partition + ghost final index is less than global
+    // size per direction
+    assert(index_x_f < nx_);
+    assert(index_y_f < ny_);
+    assert(index_z_f < nz_);
 
     // NOTE: Global element ids should be zero-index and based on looping
     //       in the x-, y-, and z-directions (in order)
@@ -335,66 +351,77 @@ void Mesh::SetElementsGlobalId_(
     elem_id_global_.resize(num_elem_partition_ + num_elem_ghost_,
                            std::numeric_limits<std::size_t>::max());
 
-    // Indices for partition and ghost nodes
-    std::size_t e_p = 0;
-    std::size_t e_g = num_elem_partition_;
+    // Indices for partition and ghost elements
+    std::size_t e_partition = 0;
+    std::size_t e_ghost = num_elem_partition_;
 
-    // Loop partition elements
-    for (std::size_t nz_i = nz_start; nz_i < nz_end; ++nz_i) {
-        for (std::size_t ny_i = ny_start; ny_i < ny_end; ++ny_i) {
-            for (std::size_t nx_i = nx_start; nx_i < nx_end; ++nx_i) {
+    // Loop elements
+    for (std::size_t z_i = index_z_0; z_i <= index_z_f; ++z_i) {
+        for (std::size_t y_i = index_y_0; y_i <= index_y_f; ++y_i) {
+            for (std::size_t x_i = index_x_0; x_i <= index_x_f; ++x_i) {
                 // Set global element id
-                const std::size_t eid =
-                    nx_i + (nx_ * ny_i) + (nx_ * ny_ * nz_i);
-
-                // Is the current element in the partition
-                const bool in_partition =
-                    (nz_0 <= nz_i && nz_i < nz_f && ny_0 <= ny_i &&
-                     ny_i < ny_f && nx_0 <= nx_i && nx_i < nx_f)
-                        ? true
-                        : false;
+                const std::size_t gid = x_i + (nx_ * y_i) + (nx_ * ny_ * z_i);
 
                 // Current element is in the partition
-                if (in_partition) {
+                if (index_z_partition_0_ <= z_i &&
+                    z_i <= index_z_partition_f_ &&
+                    index_y_partition_0_ <= y_i &&
+                    y_i <= index_y_partition_f_ &&
+                    index_x_partition_0_ <= x_i &&
+                    x_i <= index_x_partition_f_) {
                     // Sanity check: index is less than number of partition
                     // elements
-                    assert(e_p < num_elem_partition_);
+                    assert(e_partition < num_elem_partition_);
 
                     // Save global element id
-                    elem_id_global_[e_p] = eid;
+                    elem_id_global_[e_partition] = gid;
 
                     // Increment partition index
-                    e_p++;
+                    e_partition++;
 
                     // Skip the rest
                     continue;
                 }
 
                 // Sanity check: index is more than number of partition elements
-                assert(num_elem_partition_ <= e_g);
+                assert(num_elem_partition_ <= e_ghost);
 
                 // Sanity check: index is less than number of (partition +
                 // ghost) elements
-                assert(e_g < num_elem_total_);
+                assert(e_ghost < num_elem_total_);
 
                 // Save global element id
-                elem_id_global_[e_g] = eid;
+                elem_id_global_[e_ghost] = gid;
 
                 // Increment ghost index
-                e_g++;
+                e_ghost++;
             }
         }
     }
 
     // Sanity check: looped across all partition elements
-    assert(e_p == num_elem_partition_);
+    assert(e_partition == num_elem_partition_);
 
     // Sanity check: looped across all ghost elements
-    assert(e_g == num_elem_total_);
+    assert(e_ghost == num_elem_total_);
 
-    // Sanity check: global element ids are reasonable
-    for (const auto eid : elem_id_global_) {
-        assert(eid < std::numeric_limits<std::size_t>::max());
+    // Loop each element id
+    for (const auto gid : elem_id_global_) {
+        // Sanity check: global element ids have been updated from
+        // the initialized value
+        assert(gid < std::numeric_limits<std::size_t>::max());
+
+        // Sanity check: global element ids are less than global
+        // number of elements
+        assert(gid < num_elem_);
+    }
+
+    // Resize gloabl to local vector
+    elem_id_local_.resize(num_elem_, std::numeric_limits<std::size_t>::max());
+
+    // Fill gloabl to local vector
+    for (std::size_t e = 0; e < elem_id_global_.size(); ++e) {
+        elem_id_local_[elem_id_global_[e]] = e;
     }
 
 }  // Mesh::SetElementsGlobalId_
@@ -403,18 +430,94 @@ void Mesh::SetElementsGlobalId_(
 // Set elements neighborhood
 // ----------------------------------------------------------------------------
 void Mesh::SetElementsNeighborhood_() {
-    // Resize based on shape function order
-    elem_neighborhood_.resize(6 *
-                              num_elem_partition_);  // TODO make this "dynamic"
+    // Sanity check: static_cast has defined behavior
+    const std::size_t max_int =
+        static_cast<std::size_t>(std::numeric_limits<int>::max());
+    assert(neighborhood_width_ < max_int);
+
+    // Set number of neighbors per element (depending on basis function order)
+    const int w = static_cast<int>(neighborhood_width_);
+    const std::size_t num_neighbors =
+        (2 * w + 1) * (2 * w + 1) * (2 * w + 1) - 1;
+
+    // Resize based on number neighbors per element
+    elem_neighborhood_.resize(num_neighbors * num_elem_partition_);
 
     // Default neighbor id is local element id
     for (std::size_t e = 0; e < num_elem_partition_; ++e) {
-        for (std::size_t n = 0; n < 6; ++n) {
-            elem_neighborhood_[6 * e + n] = e;
+        for (std::size_t n = 0; n < num_neighbors; ++n) {
+            elem_neighborhood_[num_neighbors * e + n] = e;
         }
     }
 
-    // TODO -- keep going
+    // Loop elements
+    for (std::size_t e = 0; e < num_elem_partition_; ++e) {
+        // Grab global element id
+        const std::size_t gid = elem_id_global_[e];
+
+        // Decompose into global indices in each direction
+        const std::size_t x_i = gid % nx_;
+        const std::size_t y_i = (gid / nx_) % ny_;
+        const std::size_t z_i = gid / (nx_ * ny_);
+
+        // Sanity check: static_cast has defined behavior
+        assert(x_i < max_int);
+        assert(y_i < max_int);
+        assert(z_i < max_int);
+        assert(nx_ < max_int);
+        assert(ny_ < max_int);
+        assert(nz_ < max_int);
+
+        // Count
+        std::size_t n = 0;
+
+        // Loop each direction
+        for (int dz_i = -w; dz_i <= w; ++dz_i) {
+            // Set neighbor global index z-direction
+            const int nz_i = static_cast<int>(z_i) + dz_i;
+
+            for (int dy_i = -w; dy_i <= w; ++dy_i) {
+                // Set neighbor global index y-direction
+                const int ny_i = static_cast<int>(y_i) + dy_i;
+
+                for (int dx_i = -w; dx_i <= w; ++dx_i) {
+                    // Set neighbor global index x-direction
+                    const int nx_i = static_cast<int>(x_i) + dx_i;
+
+                    // Check for outside of global bounds
+                    if (nx_i < 0 || static_cast<int>(nx_) <= nx_i || ny_i < 0 ||
+                        static_cast<int>(ny_) <= ny_i || nz_i < 0 ||
+                        static_cast<int>(nz_) <= nz_i) {
+                        // Increment and skip the rest
+                        n++;
+                        continue;
+                    }
+
+                    // Compute global element id
+                    const std::size_t n_gid =
+                        nx_i + (nx_ * ny_i) + (nx_ * ny_ * nz_i);
+
+                    // Check for center
+                    if (gid == n_gid) {
+                        // Do *not* increment and skip the rest
+                        continue;
+                    }
+
+                    // Neighbor's local element id
+                    const std::size_t n_lid = elem_id_local_[n_gid];
+
+                    // Sanity check: local id has been initialized
+                    assert(n_lid < std::numeric_limits<std::size_t>::max());
+
+                    // Save neighbor local element id
+                    elem_neighborhood_[num_neighbors * e + n] = n_lid;
+
+                    // Increment
+                    n++;
+                }
+            }
+        }
+    }
 
 }  // Mesh::SetElementsNeighborhood_
 
