@@ -89,50 +89,96 @@ class Mesh : public MeshBase {
    private:
     // ------------------------------------------------------------------------
     // Setup mesh
+    // Calls:
+    //   InitializeMesh_()
+    //   PartitionMesh_()
+    //   NumberMesh_()
+    //   ConnectMesh_()
+    //   CheckMesh_()
     // ------------------------------------------------------------------------
     void SetupMesh_();
 
     // ------------------------------------------------------------------------
     // Initialize mesh
+    // Checks the provided dimensions and number of elements; computes
+    // element size
     // ------------------------------------------------------------------------
     void InitializeMesh_();
 
     // ------------------------------------------------------------------------
     // Partition mesh
+    // Calls:
+    //   SetPartitionsPerDirection_()
+    //   SetNumberElements_()
     // ------------------------------------------------------------------------
     void PartitionMesh_();
 
     // ------------------------------------------------------------------------
+    // Number mesh
+    // Calls:
+    //   SetElementsGlobalId_()
+    //   SetElementsNeighborhood_()
+    // ------------------------------------------------------------------------
+    void NumberMesh_();
+
+    // ------------------------------------------------------------------------
+    // Connect mesh
+    // Calls:
+    //   SetElementsConnectivity_()
+    //   TODO
+    // ------------------------------------------------------------------------
+    void ConnectMesh_();
+
+    // ------------------------------------------------------------------------
     // Check mesh
+    // Making it this far means that `setup_complete` should be set to `true`
     // ------------------------------------------------------------------------
     void CheckMesh_();
 
     // ------------------------------------------------------------------------
     // Set partitions per direction
+    // Decompose global domain into blocks based on the number of elements
+    // per direction
     // ------------------------------------------------------------------------
     void SetPartitionsPerDirection_(std::vector<std::size_t>& partitions_start,
                                     std::vector<std::size_t>& partitions_size);
 
     // ------------------------------------------------------------------------
     // Set number of elements
+    // For partition and ghost elements correspond to this proc's block, set
+    // the number of elements, starting indices, ending indices, etc.
     // ------------------------------------------------------------------------
     void SetNumberElements_(const std::vector<std::size_t>& partitions_start,
                             const std::vector<std::size_t>& partitions_size);
 
     // ------------------------------------------------------------------------
     // Set elements global id
+    // For partition and ghost elements, set
+    //   `elem_id_global_` (index is local id, value is global id)
+    //   `elem_id_local_`  (index is global id, value is local id)
+    // For now `elem_id_local_` is sized based on the total elements in the
+    // global domain... alternative is unordered_map?
     // ------------------------------------------------------------------------
     void SetElementsGlobalId_();
 
     // ------------------------------------------------------------------------
     // Set elements neighborhood
+    // The element neighborhood size depends on basis function order; determine
+    // shell of surrounding elements for partition element
     // ------------------------------------------------------------------------
     void SetElementsNeighborhood_();
 
     // ------------------------------------------------------------------------
     // Set elements connectivity
+    // TODO
     // ------------------------------------------------------------------------
     void SetElementsConnectivity_();
+
+    // ------------------------------------------------------------------------
+    // Set nodal coordinates
+    // TODO
+    // ------------------------------------------------------------------------
+    void SetNodalCoordinates_();
 
     // MeshCheck_ has been successfully called
     bool setup_complete_ = false;
@@ -245,7 +291,7 @@ class Mesh : public MeshBase {
     // std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
     // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
 
-    // Element global id with size (num_elem_partition_ + num_elem_ghost_)
+    // Element global id with size num_elem_total_
     // Index is local element id
     // Value is global element id
     std::vector<std::size_t> elem_id_global_;
@@ -255,13 +301,21 @@ class Mesh : public MeshBase {
     // Value is local element id
     std::vector<std::size_t> elem_id_local_;
 
-    // Element neighborhood with size (TODO)
+    // Element global index with size 3 * num_elem_total_
+    // Flat convention: [e0x_i,e0y_i,e0z_i,e1x_i,e1y_i,e1z_i,...]
+    std::vector<std::size_t> elem_index_global_;
+
+    // Element neighborhood with size (num_neighbors * num_elem_partition_),
+    // where num_neighbors = (2 * neighborhood_width_ + 1) ^ 3 - 1
+    // Flat convention: [e0n0,e0n1,...,e0nN,e1n0,e1n1,...,e1nN,...]
     std::vector<std::size_t> elem_neighborhood_;
 
-    // Element connectivity with size (TODO)
+    // Element connectivity with size (8 * num_elem_total_)
+    // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
     std::vector<std::size_t> conn_;
 
-    // Nodal coordinates with size 3 * (num_elem_partition_ + num_elem_ghost_)
+    // Nodal coordinates with size (TODO)
+    // Flat convention: [] TODO
     std::vector<double> nodal_coords_;
 };
 

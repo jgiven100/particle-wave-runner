@@ -53,3 +53,11 @@ From root, run
 sh format.sh
 ```
 
+## Visualization
+
+Install `paraview` (if needed)
+
+```
+sudo apt install paraview
+```
+

@@ -13,9 +13,10 @@ namespace pwr {
 // Setup mesh
 // ----------------------------------------------------------------------------
 void Mesh::SetupMesh_() {
-    // Initialize, partition, and check mesh
     InitializeMesh_();
     PartitionMesh_();
+    NumberMesh_();
+    ConnectMesh_();
     CheckMesh_();
 
 }  // Mesh::SetupMesh_
@@ -24,7 +25,7 @@ void Mesh::SetupMesh_() {
 // Initialize mesh
 // ----------------------------------------------------------------------------
 void Mesh::InitializeMesh_() {
-    // Sanity check: dimenstions
+    // Sanity check: dimensions
     assert(x_max_ > x_min_);
     assert(y_max_ > y_min_);
     assert(z_max_ > z_min_);
@@ -48,28 +49,36 @@ void Mesh::InitializeMesh_() {
 // Partition mesh
 // ----------------------------------------------------------------------------
 void Mesh::PartitionMesh_() {
-    // Get rank and size
-    const int rank = pwr::MPIUtilities::Rank();
-    const int size = pwr::MPIUtilities::Size();
-
     // Set partitions
     std::vector<std::size_t> partitions_start;
     std::vector<std::size_t> partitions_size;
     SetPartitionsPerDirection_(partitions_start, partitions_size);
 
-    // Set number of elements (partition + ghost)
+    // Set number of elements (partition + ghost) for this partition
     SetNumberElements_(partitions_start, partitions_size);
 
+}  // Mesh::PartitionMesh_
+
+// ----------------------------------------------------------------------------
+// Number mesh
+// ----------------------------------------------------------------------------
+void Mesh::NumberMesh_() {
     // Set elements global id
     SetElementsGlobalId_();
 
     // Set elements neighborhood
     SetElementsNeighborhood_();
 
+}  // Mesh::NumberMesh_
+
+// ----------------------------------------------------------------------------
+// Connect mesh
+// ----------------------------------------------------------------------------
+void Mesh::ConnectMesh_() {
     // Set connectivity
     SetElementsConnectivity_();
 
-}  // Mesh::PartitionMesh_
+}  // Mesh::ConnectMesh_
 
 // ----------------------------------------------------------------------------
 // Check mesh
@@ -348,7 +357,11 @@ void Mesh::SetElementsGlobalId_() {
     //       in the x-, y-, and z-directions (in order)
 
     // Resize
-    elem_id_global_.resize(num_elem_partition_ + num_elem_ghost_,
+    elem_index_global_.resize(3 * num_elem_total_,
+                              std::numeric_limits<std::size_t>::max());
+
+    // Resize
+    elem_id_global_.resize(num_elem_total_,
                            std::numeric_limits<std::size_t>::max());
 
     // Indices for partition and ghost elements
@@ -373,6 +386,11 @@ void Mesh::SetElementsGlobalId_() {
                     // elements
                     assert(e_partition < num_elem_partition_);
 
+                    // Save global indices
+                    elem_index_global_[3 * e_partition + 0] = x_i;
+                    elem_index_global_[3 * e_partition + 1] = y_i;
+                    elem_index_global_[3 * e_partition + 2] = z_i;
+
                     // Save global element id
                     elem_id_global_[e_partition] = gid;
 
@@ -390,6 +408,11 @@ void Mesh::SetElementsGlobalId_() {
                 // ghost) elements
                 assert(e_ghost < num_elem_total_);
 
+                // Save global indices
+                elem_index_global_[3 * e_ghost + 0] = x_i;
+                elem_index_global_[3 * e_ghost + 1] = y_i;
+                elem_index_global_[3 * e_ghost + 2] = z_i;
+
                 // Save global element id
                 elem_id_global_[e_ghost] = gid;
 
@@ -405,8 +428,28 @@ void Mesh::SetElementsGlobalId_() {
     // Sanity check: looped across all ghost elements
     assert(e_ghost == num_elem_total_);
 
-    // Loop each element id
-    for (const auto gid : elem_id_global_) {
+    // Loop each element
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
+        // Grab each element index
+        const std::size_t x_i = elem_index_global_[3 * e + 0];
+        const std::size_t y_i = elem_index_global_[3 * e + 1];
+        const std::size_t z_i = elem_index_global_[3 * e + 2];
+
+        // Sanity check: global element indices have been updated from
+        // the initialized value
+        assert(x_i < std::numeric_limits<std::size_t>::max());
+        assert(y_i < std::numeric_limits<std::size_t>::max());
+        assert(z_i < std::numeric_limits<std::size_t>::max());
+
+        // Sanity check: global element indices are less than global
+        // number of elements per direction
+        assert(x_i < nx_);
+        assert(y_i < ny_);
+        assert(z_i < nz_);
+
+        // Grab each element id
+        const std::size_t gid = elem_id_global_[e];
+
         // Sanity check: global element ids have been updated from
         // the initialized value
         assert(gid < std::numeric_limits<std::size_t>::max());
@@ -416,10 +459,10 @@ void Mesh::SetElementsGlobalId_() {
         assert(gid < num_elem_);
     }
 
-    // Resize gloabl to local vector
+    // Resize global to local vector
     elem_id_local_.resize(num_elem_, std::numeric_limits<std::size_t>::max());
 
-    // Fill gloabl to local vector
+    // Fill global to local vector
     for (std::size_t e = 0; e < elem_id_global_.size(); ++e) {
         elem_id_local_[elem_id_global_[e]] = e;
     }
@@ -455,10 +498,15 @@ void Mesh::SetElementsNeighborhood_() {
         // Grab global element id
         const std::size_t gid = elem_id_global_[e];
 
-        // Decompose into global indices in each direction
-        const std::size_t x_i = gid % nx_;
-        const std::size_t y_i = (gid / nx_) % ny_;
-        const std::size_t z_i = gid / (nx_ * ny_);
+        // // Decompose into global indices in each direction
+        // const std::size_t x_i = gid % nx_;
+        // const std::size_t y_i = (gid / nx_) % ny_;
+        // const std::size_t z_i = gid / (nx_ * ny_);
+
+        // Grab global indices in each direction
+        const std::size_t x_i = elem_index_global_[3 * e + 0];
+        const std::size_t y_i = elem_index_global_[3 * e + 1];
+        const std::size_t z_i = elem_index_global_[3 * e + 2];
 
         // Sanity check: static_cast has defined behavior
         assert(x_i < max_int);
@@ -503,6 +551,9 @@ void Mesh::SetElementsNeighborhood_() {
                         continue;
                     }
 
+                    // Sanity check: global neighbor id is within bounds
+                    assert(n_gid < num_elem_);
+
                     // Neighbor's local element id
                     const std::size_t n_lid = elem_id_local_[n_gid];
 
@@ -525,8 +576,32 @@ void Mesh::SetElementsNeighborhood_() {
 // Set elements connectivity
 // ----------------------------------------------------------------------------
 void Mesh::SetElementsConnectivity_() {
-    ;  // TODO
+    // Connectivity ordering matches gmsh convetion for hex1
+    /*
+    //  7----------6
+    //  |\         |\
+    //  | \        | \
+    //  |  \       |  \
+    //  |   3------|---2
+    //  |   |      |   |      y
+    //  4----------5   |      ^
+    //   \  |       \  |   z  |
+    //    \ |        \ |    \ |
+    //     \|         \|     \|
+    //      0----------1      +------> x
+    */
+
+    // Resize based on 8 nodes per element
+    conn_.resize(8 * num_elem_total_);
 
 }  // Mesh::SetElementsConnectivity_
+
+// ----------------------------------------------------------------------------
+// Set nodal coordinates
+// ----------------------------------------------------------------------------
+void Mesh::SetNodalCoordinates_() {
+    ;  // TODO
+
+}  // Mesh::SetNodalCoordinates_
 
 }  // namespace pwr
