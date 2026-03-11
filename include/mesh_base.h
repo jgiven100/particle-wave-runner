@@ -30,6 +30,7 @@ class MeshBase {
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;
 };
+
 }  // namespace pwr
 
 #endif  // PWR_MESH_BASE_H
