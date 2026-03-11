@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>  // TODO remove me
 #include <limits>
 #include <numeric>
 
@@ -25,11 +24,6 @@ void Mesh::SetupMesh_() {
 // Initialize mesh
 // ----------------------------------------------------------------------------
 void Mesh::InitializeMesh_() {
-    // Sanity check: dimensions
-    assert(x_max_ > x_min_);
-    assert(y_max_ > y_min_);
-    assert(z_max_ > z_min_);
-
     // Sanity check: number of elements
     assert(nx_ > 0);
     assert(ny_ > 0);
@@ -37,6 +31,22 @@ void Mesh::InitializeMesh_() {
 
     // Set total number of elements (all partitions)
     num_elem_ = nx_ * ny_ * nz_;
+
+    // Set number of nodes
+    nodes_x_ = nx_ + 1;
+    nodes_y_ = ny_ + 1;
+    nodes_z_ = nz_ + 1;
+
+    // Set total number of nodes (all partitions)
+    num_nodes_ = nodes_x_ * nodes_y_ * nodes_z_;
+
+    // Sanity check: more nodes than elements
+    assert(num_nodes_ > num_elem_);
+
+    // Sanity check: dimensions
+    assert(x_max_ > x_min_);
+    assert(y_max_ > y_min_);
+    assert(z_max_ > z_min_);
 
     // Compute element size
     dx_ = (x_max_ - x_min_) / static_cast<double>(nx_);
@@ -55,7 +65,7 @@ void Mesh::PartitionMesh_() {
     SetPartitionsPerDirection_(partitions_start, partitions_size);
 
     // Set number of elements (partition + ghost) for this partition
-    SetNumberElements_(partitions_start, partitions_size);
+    SetElementsNumbering_(partitions_start, partitions_size);
 
 }  // Mesh::PartitionMesh_
 
@@ -77,6 +87,9 @@ void Mesh::NumberMesh_() {
 void Mesh::ConnectMesh_() {
     // Set connectivity
     SetElementsConnectivity_();
+
+    // Set nodal coordinates
+    SetNodalCoordinates_();
 
 }  // Mesh::ConnectMesh_
 
@@ -117,7 +130,7 @@ void Mesh::SetPartitionsPerDirection_(
         std::size_t b_index = 0;
         std::size_t max_num_elements = 0;
 
-        // Loop each block
+        // Loop blocks
         for (size_t i = 0; i < n_index; ++i) {
             // Set the number of elements per direction in the current block
             const std::size_t nx_i = partitions_size[3 * i + 0];
@@ -246,10 +259,11 @@ void Mesh::SetPartitionsPerDirection_(
 }  // Mesh::SetPartitionsPerDirection_
 
 // ----------------------------------------------------------------------------
-// Set number of elements
+// Set elements numbering
 // ----------------------------------------------------------------------------
-void Mesh::SetNumberElements_(const std::vector<std::size_t> &partitions_start,
-                              const std::vector<std::size_t> &partitions_size) {
+void Mesh::SetElementsNumbering_(
+    const std::vector<std::size_t> &partitions_start,
+    const std::vector<std::size_t> &partitions_size) {
     // Get rank
     const int rank = pwr::MPIUtilities::Rank();
 
@@ -322,7 +336,7 @@ void Mesh::SetNumberElements_(const std::vector<std::size_t> &partitions_start,
     // Set number of ghost elements
     num_elem_ghost_ = num_elem_total_ - num_elem_partition_;
 
-}  // Mesh::SetNumberElements_
+}  // Mesh::SetElementsNumbering_
 
 // ----------------------------------------------------------------------------
 // Set elements global id
@@ -428,7 +442,7 @@ void Mesh::SetElementsGlobalId_() {
     // Sanity check: looped across all ghost elements
     assert(e_ghost == num_elem_total_);
 
-    // Loop each element
+    // Loop elements
     for (std::size_t e = 0; e < num_elem_total_; ++e) {
         // Grab each element index
         const std::size_t x_i = elem_index_global_[3 * e + 0];
@@ -519,7 +533,7 @@ void Mesh::SetElementsNeighborhood_() {
         // Count
         std::size_t n = 0;
 
-        // Loop each direction
+        // Loop directions
         for (int dz_i = -w; dz_i <= w; ++dz_i) {
             // Set neighbor global index z-direction
             const int nz_i = static_cast<int>(z_i) + dz_i;
@@ -592,7 +606,63 @@ void Mesh::SetElementsConnectivity_() {
     */
 
     // Resize based on 8 nodes per element
-    conn_.resize(8 * num_elem_total_);
+    conn_.resize(8 * num_elem_total_, std::numeric_limits<std::size_t>::max());
+
+    // Set nodes in x-y plane
+    const std::size_t slab_xy = nodes_x_ * nodes_y_;
+
+    // Loop elements
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
+        // Grab element indices
+        const std::size_t x_i = elem_index_global_[3 * e + 0];
+        const std::size_t y_i = elem_index_global_[3 * e + 1];
+        const std::size_t z_i = elem_index_global_[3 * e + 2];
+
+        // Helpful plus one index for y and z
+        const std::size_t x_ip1 = x_i + 1;
+        const std::size_t y_ip1 = y_i + 1;
+        const std::size_t z_ip1 = z_i + 1;
+
+        // Compute node ids
+        const std::size_t n0 = x_i + (nodes_x_ * y_i) + (slab_xy * z_i);
+        const std::size_t n1 = n0 + 1;
+
+        const std::size_t n2 = x_ip1 + (nodes_x_ * y_ip1) + (slab_xy * z_i);
+        const std::size_t n3 = n2 - 1;
+
+        const std::size_t n4 = x_i + (nodes_x_ * y_i) + (slab_xy * z_ip1);
+        const std::size_t n5 = n4 + 1;
+
+        const std::size_t n6 = x_ip1 + (nodes_x_ * y_ip1) + (slab_xy * z_ip1);
+        const std::size_t n7 = n6 - 1;
+
+        // Save node ids
+        conn_[8 * e + 0] = n0;
+        conn_[8 * e + 1] = n1;
+        conn_[8 * e + 2] = n2;
+        conn_[8 * e + 3] = n3;
+        conn_[8 * e + 4] = n4;
+        conn_[8 * e + 5] = n5;
+        conn_[8 * e + 6] = n6;
+        conn_[8 * e + 7] = n7;
+    }
+
+    // Loop elements
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
+        // Loop nodes
+        for (std::size_t n = 0; n < 8; ++n) {
+            // Grab each node id
+            const std::size_t nid = conn_[8 * e + n];
+
+            // Sanity check: global node ids have been updated from
+            // the initialized value
+            assert(nid < std::numeric_limits<std::size_t>::max());
+
+            // Sanity check: global node ids are less than global
+            // number of nodes
+            assert(nid < num_nodes_);
+        }
+    }
 
 }  // Mesh::SetElementsConnectivity_
 
@@ -600,7 +670,71 @@ void Mesh::SetElementsConnectivity_() {
 // Set nodal coordinates
 // ----------------------------------------------------------------------------
 void Mesh::SetNodalCoordinates_() {
-    ;  // TODO
+    // Resize based on {x,y,z} per node
+    nodal_coords_.resize(3 * num_nodes_, std::numeric_limits<double>::max());
+
+    // Keep track of which nodes have been assigned
+    std::vector<char> node_assigned(num_nodes_, 0);
+
+    // Create offset map
+    const std::vector<double> offset{
+        0.,  0.,  0.,   // node 0
+        dx_, 0.,  0.,   // node 1
+        dx_, dy_, 0.,   // node 2
+        0.,  dy_, 0.,   // node 3
+        0.,  0.,  dz_,  // node 4
+        dx_, 0.,  dz_,  // node 5
+        dx_, dy_, dz_,  // node 6
+        0.,  dy_, dz_,  // node 7
+    };
+
+    // Loop elements
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
+        // Grab element indices
+        const std::size_t x_i = elem_index_global_[3 * e + 0];
+        const std::size_t y_i = elem_index_global_[3 * e + 1];
+        const std::size_t z_i = elem_index_global_[3 * e + 2];
+
+        // Compute coordinates at element corner
+        const double e_x = static_cast<double>(x_i) * dx_;
+        const double e_y = static_cast<double>(y_i) * dy_;
+        const double e_z = static_cast<double>(z_i) * dz_;
+
+        // Loop nodes
+        for (std::size_t n = 0; n < 8; ++n) {
+            // Grab current node
+            const std::size_t nid = conn_[8 * e + n];
+
+            // Sanity check: node id is reasonable
+            assert(nid < num_nodes_);
+
+            // Go to next node if this node has alreday been assigned
+            if (node_assigned[nid] != 0) {
+                continue;
+            }
+
+            // Save nodal coordinates
+            nodal_coords_[3 * nid + 0] = e_x + offset[3 * n + 0];
+            nodal_coords_[3 * nid + 1] = e_y + offset[3 * n + 1];
+            nodal_coords_[3 * nid + 2] = e_z + offset[3 * n + 2];
+
+            // Update assigned nodes
+            node_assigned[nid] = 1;
+        }
+    }
+
+    // Loop nodes
+    for (std::size_t n = 0; n < num_nodes_; ++n) {
+        // Go to next node if this node is not assigned
+        if (node_assigned[n] == 0) {
+            continue;
+        }
+
+        // Sanity check: nodal coordinates in each direction are assigned
+        assert(nodal_coords_[3 * n + 0] < std::numeric_limits<double>::max());
+        assert(nodal_coords_[3 * n + 1] < std::numeric_limits<double>::max());
+        assert(nodal_coords_[3 * n + 2] < std::numeric_limits<double>::max());
+    }
 
 }  // Mesh::SetNodalCoordinates_
 

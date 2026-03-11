@@ -74,6 +74,12 @@ class Mesh : public MeshBase {
         return num_elem_ghost_;
     }
 
+    // Get number of elements partition + ghost
+    std::size_t GetNumElemTotal() const override {
+        assert(setup_complete_);
+        return num_elem_total_;
+    }
+
     // Get element-wise connectivity
     const std::vector<std::size_t>& GetElemConnectivity() const override {
         assert(setup_complete_);
@@ -109,7 +115,7 @@ class Mesh : public MeshBase {
     // Partition mesh
     // Calls:
     //   SetPartitionsPerDirection_()
-    //   SetNumberElements_()
+    //   SetElementsNumbering_()
     // ------------------------------------------------------------------------
     void PartitionMesh_();
 
@@ -144,12 +150,12 @@ class Mesh : public MeshBase {
                                     std::vector<std::size_t>& partitions_size);
 
     // ------------------------------------------------------------------------
-    // Set number of elements
+    // Set elements numbering
     // For partition and ghost elements correspond to this proc's block, set
     // the number of elements, starting indices, ending indices, etc.
     // ------------------------------------------------------------------------
-    void SetNumberElements_(const std::vector<std::size_t>& partitions_start,
-                            const std::vector<std::size_t>& partitions_size);
+    void SetElementsNumbering_(const std::vector<std::size_t>& partitions_start,
+                               const std::vector<std::size_t>& partitions_size);
 
     // ------------------------------------------------------------------------
     // Set elements global id
@@ -170,7 +176,8 @@ class Mesh : public MeshBase {
 
     // ------------------------------------------------------------------------
     // Set elements connectivity
-    // TODO
+    // Connectivity matches gmsh convention for hex1; connectivity set for
+    // partition and ghost elements
     // ------------------------------------------------------------------------
     void SetElementsConnectivity_();
 
@@ -276,6 +283,18 @@ class Mesh : public MeshBase {
     // Number of partition + ghost elements
     std::size_t num_elem_total_;
 
+    // Number of global nodes x-direction
+    std::size_t nodes_x_;
+
+    // Number of global nodes y-direction
+    std::size_t nodes_y_;
+
+    // Number of global nodes z-direction
+    std::size_t nodes_z_;
+
+    // Number of global nodes
+    std::size_t num_nodes_;
+
     // Element size x-direction
     double dx_;
 
@@ -299,9 +318,11 @@ class Mesh : public MeshBase {
     // Element local id with size num_elem_
     // Index is gloabl element id
     // Value is local element id
+    // std::numeric_limits<size_t>::max() is placeholder for elements *not*
+    // involved on this proc (partition or ghost)
     std::vector<std::size_t> elem_id_local_;
 
-    // Element global index with size 3 * num_elem_total_
+    // Element global index with size (3 * num_elem_total_)
     // Flat convention: [e0x_i,e0y_i,e0z_i,e1x_i,e1y_i,e1z_i,...]
     std::vector<std::size_t> elem_index_global_;
 
@@ -314,7 +335,7 @@ class Mesh : public MeshBase {
     // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
     std::vector<std::size_t> conn_;
 
-    // Nodal coordinates with size (TODO)
+    // Nodal coordinates with size (3 * num_nodes_)
     // Flat convention: [] TODO
     std::vector<double> nodal_coords_;
 };

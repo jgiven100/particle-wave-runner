@@ -21,6 +21,9 @@ class MeshBase {
     // Get number of elements ghost
     virtual std::size_t GetNumElemGhost() const = 0;
 
+    // Get number of elements partition + ghost
+    virtual std::size_t GetNumElemTotal() const = 0;
+
     // Get element-wise connectivity
     virtual const std::vector<std::size_t>& GetElemConnectivity() const = 0;
 
