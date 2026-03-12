@@ -46,7 +46,7 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     // Destructor
     // ------------------------------------------------------------------------
-    ~Mesh() = default;
+    ~Mesh() override = default;
 
     // ------------------------------------------------------------------------
     // Delete copy constructor
@@ -131,7 +131,7 @@ class Mesh : public MeshBase {
     // Connect mesh
     // Calls:
     //   SetElementsConnectivity_()
-    //   TODO
+    //   SetNodalCoordinates_()
     // ------------------------------------------------------------------------
     void ConnectMesh_();
 
@@ -183,7 +183,7 @@ class Mesh : public MeshBase {
 
     // ------------------------------------------------------------------------
     // Set nodal coordinates
-    // TODO
+    // Computes and saves the {x,y,z} coordinates for each node
     // ------------------------------------------------------------------------
     void SetNodalCoordinates_();
 
@@ -336,7 +336,7 @@ class Mesh : public MeshBase {
     std::vector<std::size_t> conn_;
 
     // Nodal coordinates with size (3 * num_nodes_)
-    // Flat convention: [] TODO
+    // Flat convention: [n0x,n0y,n0z,n1x,n1y,n1z,...]
     std::vector<double> nodal_coords_;
 };
 
