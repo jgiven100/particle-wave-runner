@@ -112,6 +112,9 @@ void Mesh::SetPartitionsPerDirection_(
     const int size = pwr::MPIUtilities::Size();
     const int rank = pwr::MPIUtilities::Rank();
 
+    // Sanity check: static_cast has defined behavior
+    assert(size >= 0);
+
     // Resize and set zero
     partitions_start.resize(3 * size, 0);
     partitions_size.resize(3 * size, 0);
@@ -125,7 +128,7 @@ void Mesh::SetPartitionsPerDirection_(
     std::size_t n_index = 1;
 
     // Split each direction sequentially
-    while (n_index < size) {
+    while (n_index < static_cast<std::size_t>(size)) {
         // Find block with the largest number of elements
         std::size_t b_index = 0;
         std::size_t max_num_elements = 0;
@@ -241,7 +244,7 @@ void Mesh::SetPartitionsPerDirection_(
 
     // Sanity check: sum of partition elements equals total elements
     std::size_t num_elem = 0;
-    for (std::size_t i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         num_elem += partitions_size[3 * i + 0] * partitions_size[3 * i + 1] *
                     partitions_size[3 * i + 2];
     }
