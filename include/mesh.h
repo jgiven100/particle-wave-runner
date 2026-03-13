@@ -86,6 +86,12 @@ class Mesh : public MeshBase {
         return conn_;
     }
 
+    // Get active nodes
+    const std::vector<char>& GetActiveNodes() const override {
+        assert(setup_complete_);
+        return active_nodes_;
+    }
+
     // Get nodal coordinates
     const std::vector<double>& GetNodalCoordinates() const override {
         assert(setup_complete_);
@@ -334,6 +340,10 @@ class Mesh : public MeshBase {
     // Element connectivity with size (8 * num_elem_total_)
     // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
     std::vector<std::size_t> conn_;
+
+    // Active node boolean with size num_nodes_
+    // Flat convetion: [n0,n1,...]
+    std::vector<char> active_nodes_;
 
     // Nodal coordinates with size (3 * num_nodes_)
     // Flat convention: [n0x,n0y,n0z,n1x,n1y,n1z,...]

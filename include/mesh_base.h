@@ -27,6 +27,9 @@ class MeshBase {
     // Get element-wise connectivity
     virtual const std::vector<std::size_t>& GetElemConnectivity() const = 0;
 
+    // Get active nodes
+    virtual const std::vector<char>& GetActiveNodes() const = 0;
+
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;
 };

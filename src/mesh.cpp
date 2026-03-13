@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <limits>
 #include <numeric>
+#include <vector>
 
 #include "mpi_utilities.h"
 
@@ -676,8 +678,8 @@ void Mesh::SetNodalCoordinates_() {
     // Resize based on {x,y,z} per node
     nodal_coords_.resize(3 * num_nodes_, std::numeric_limits<double>::max());
 
-    // Keep track of which nodes have been assigned
-    std::vector<char> node_assigned(num_nodes_, 0);
+    // Resize for number of nodes
+    active_nodes_.resize(num_nodes_, 0);
 
     // Create offset map
     const std::vector<double> offset{
@@ -711,8 +713,9 @@ void Mesh::SetNodalCoordinates_() {
             // Sanity check: node id is reasonable
             assert(nid < num_nodes_);
 
-            // Go to next node if this node has alreday been assigned
-            if (node_assigned[nid] != 0) {
+            // Go to next node if this node is set to active (meaning that
+            // the nodal coordinates have alreday been assigned)
+            if (active_nodes_[nid] != 0) {
                 continue;
             }
 
@@ -721,15 +724,18 @@ void Mesh::SetNodalCoordinates_() {
             nodal_coords_[3 * nid + 1] = e_y + offset[3 * n + 1];
             nodal_coords_[3 * nid + 2] = e_z + offset[3 * n + 2];
 
-            // Update assigned nodes
-            node_assigned[nid] = 1;
+            // Update active nodes
+            active_nodes_[nid] = 1;
         }
     }
 
+    // Sanity check: active_nodes_ and nodal_coords_ are consistently sized
+    assert(active_nodes_.size() == nodal_coords_.size() / 3);
+
     // Loop nodes
     for (std::size_t n = 0; n < num_nodes_; ++n) {
-        // Go to next node if this node is not assigned
-        if (node_assigned[n] == 0) {
+        // Go to next node if this node is not active
+        if (active_nodes_[n] == 0) {
             continue;
         }
 
