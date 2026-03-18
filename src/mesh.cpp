@@ -14,14 +14,14 @@ namespace pwr {
 // ----------------------------------------------------------------------------
 // Setup mesh
 // ----------------------------------------------------------------------------
-void Mesh::SetupMesh_() {
+void Mesh::Setup_() {
     InitializeMesh_();
     PartitionMesh_();
     NumberMesh_();
     ConnectMesh_();
-    CheckMesh_();
+    CheckSetup_();
 
-}  // Mesh::SetupMesh_
+}  // Mesh::Setup_
 
 // ----------------------------------------------------------------------------
 // Initialize mesh
@@ -99,11 +99,11 @@ void Mesh::ConnectMesh_() {
 // ----------------------------------------------------------------------------
 // Check mesh
 // ----------------------------------------------------------------------------
-void Mesh::CheckMesh_() {
+void Mesh::CheckSetup_() {
     // Setup is complete
     setup_complete_ = true;
 
-}  // Mesh::CheckMesh_
+}  // Mesh::CheckSetup_
 
 // ----------------------------------------------------------------------------
 // Set partitions per direction

@@ -27,7 +27,7 @@ class Mesh : public MeshBase {
           nx_(nx),
           ny_(ny),
           nz_(nz) {
-        SetupMesh_();
+        Setup_();
     }
 
     // ------------------------------------------------------------------------
@@ -106,9 +106,9 @@ class Mesh : public MeshBase {
     //   PartitionMesh_()
     //   NumberMesh_()
     //   ConnectMesh_()
-    //   CheckMesh_()
+    //   CheckSetup_()
     // ------------------------------------------------------------------------
-    void SetupMesh_();
+    void Setup_();
 
     // ------------------------------------------------------------------------
     // Initialize mesh
@@ -142,10 +142,10 @@ class Mesh : public MeshBase {
     void ConnectMesh_();
 
     // ------------------------------------------------------------------------
-    // Check mesh
-    // Making it this far means that `setup_complete` should be set to `true`
+    // Check mesh setup
+    // Making it this far means that `setup_complete_` should be set to `true`
     // ------------------------------------------------------------------------
-    void CheckMesh_();
+    void CheckSetup_();
 
     // ------------------------------------------------------------------------
     // Set partitions per direction
@@ -193,7 +193,7 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     void SetNodalCoordinates_();
 
-    // MeshCheck_ has been successfully called
+    // CheckSetup_ has been successfully called
     bool setup_complete_ = false;
 
     // Minimum global x-direction
