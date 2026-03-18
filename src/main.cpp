@@ -1,13 +1,15 @@
 #include <mpi.h>
 
 #include <cstddef>
-#include <iostream>
 #include <memory>
+#include <string>
 
 #include "mesh.h"
 #include "mesh_base.h"
 #include "mpi_environment.h"
 #include "mpi_utilities.h"
+#include "vtk_writer_base.h"
+#include "vtk_writer_mesh.h"
 
 int main(int argc, char **argv) {
     // Create MPI Enviroment (RAII wrapper for MPI_Init and MPI_Finalize)
@@ -28,8 +30,20 @@ int main(int argc, char **argv) {
     const std::size_t ny = 4;
     const std::size_t nz = 4;
 
-    std::shared_ptr<pwr::MeshBase> mesh0 = std::make_shared<pwr::Mesh>(
+    const std::shared_ptr<pwr::MeshBase> mesh = std::make_shared<pwr::Mesh>(
         x_min, y_min, z_min, x_max, y_max, z_max, nx, ny, nz);
+
+    // Generate VTK writer for mesh
+    const std::shared_ptr<pwr::VTKWriterBase> vtk_writer =
+        std::make_shared<pwr::VTKWriterMesh>(mesh);
+
+    // Set filename -- TODO class to handle I/O
+    const int step = 0;
+    std::string filename = "output/mesh_step" + std::to_string(step) + "_rank" +
+                           std::to_string(rank) + ".vtu";
+
+    // Write mesh
+    vtk_writer->Write(filename);
 
     return 0;
 }
