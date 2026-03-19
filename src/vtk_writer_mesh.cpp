@@ -4,6 +4,7 @@
 #include <vtkCellData.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkHexahedron.h>
+#include <vtkIntArray.h>
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnsignedCharArray.h>
@@ -21,9 +22,18 @@
 namespace pwr {
 
 // ----------------------------------------------------------------------------
-// Write output files
+// Setup vtk writer for mesh
 // ----------------------------------------------------------------------------
-void VTKWriterMesh::Write(const std::string &filename) const {
+void VTKWriterMesh::Setup_() {
+    InitializeWriter_();
+    CheckSetup_();
+
+}  // VTKWriterMesh::Setup_
+
+// ----------------------------------------------------------------------------
+// Initialize vtk writer for mesh
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::InitializeWriter_() {
     // ------------------------------------------------------------------------
     // Assign points
     // ------------------------------------------------------------------------
@@ -37,9 +47,9 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     // Grab nodal coordinates
     const auto &nodal_coords = mesh_->GetNodalCoordinates();
 
-    // Create VTK points object
-    auto points = vtkSmartPointer<vtkPoints>::New();
-    points->SetNumberOfPoints(num_nodes);
+    // Create vtk points object
+    points_ = vtkSmartPointer<vtkPoints>::New();
+    points_->SetNumberOfPoints(num_nodes);
 
     // Loop nodes
     for (std::size_t n = 0; n < num_nodes; ++n) {
@@ -52,8 +62,11 @@ void VTKWriterMesh::Write(const std::string &filename) const {
         const double *coords = &nodal_coords[3 * n];
 
         // Set coordinates for this point
-        points->SetPoint(n, coords);
+        points_->SetPoint(n, coords);
     }
+
+    // Sanity check: pointer to points object is not null
+    assert(points_);
 
     // ------------------------------------------------------------------------
     // Create grid and add hex elements
@@ -68,24 +81,49 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     // Sanity check: connectivity array has 8 nodes per element
     assert(conn.size() == 8 * num_elem_total);
 
-    // Create VTK grid object
-    auto grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
-    grid->Allocate(num_elem_total);
-    grid->SetPoints(points);
-
-    // Create VTK hexahedron object
-    auto hex = vtkSmartPointer<vtkHexahedron>::New();
+    // Create vtk grid object
+    grid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    grid_->Allocate(num_elem_total);
+    grid_->SetPoints(points_);
 
     // Loop partition and ghost elements
     for (std::size_t e = 0; e < num_elem_total; ++e) {
+        // Create vtk hexahedron object
+        auto hex = vtkSmartPointer<vtkHexahedron>::New();
+
         // Loop nodes per elements
         for (int n = 0; n < 8; ++n) {
             hex->GetPointIds()->SetId(n, conn[8 * e + n]);
         }
 
         // Add hex element to grid
-        grid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
+        grid_->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
     }
+
+    // Sanity check: pointer to grid object is not null
+    assert(grid_);
+
+}  // VTKWriterMesh::InitializeWriter_
+
+// ----------------------------------------------------------------------------
+// Check setup
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::CheckSetup_() {
+    // Setup is complete
+    setup_complete_ = true;
+
+}  // VTKWriterMesh::CheckSetup_
+
+// ----------------------------------------------------------------------------
+// Write output files
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::Write_(const std::string &filename) const {
+    // Clear previous arrays
+    auto cell_data = grid_->GetCellData();
+    cell_data->Initialize();
+
+    // Set the number of elements
+    const std::size_t num_elem_total = mesh_->GetNumElemTotal();
 
     // ------------------------------------------------------------------------
     // Save rank
@@ -95,7 +133,7 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     const int rank = pwr::MPIUtilities::Rank();
 
     // Create array to save rank info
-    auto rank_array = vtkSmartPointer<vtkUnsignedCharArray>::New();
+    auto rank_array = vtkSmartPointer<vtkIntArray>::New();
     rank_array->SetName("rank");
     rank_array->SetNumberOfTuples(num_elem_total);
 
@@ -105,7 +143,7 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     }
 
     // Attach array to grid
-    grid->GetCellData()->AddArray(rank_array);
+    cell_data->AddArray(rank_array);
 
     // ------------------------------------------------------------------------
     // Save ghost
@@ -134,7 +172,7 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     }
 
     // Attach array to grid
-    grid->GetCellData()->AddArray(ghost_array);
+    cell_data->AddArray(ghost_array);
 
     // ------------------------------------------------------------------------
     // Write
@@ -146,11 +184,11 @@ void VTKWriterMesh::Write(const std::string &filename) const {
     writer->SetDataModeToBinary();
 
     // Add grid to writer
-    writer->SetInputData(grid);
+    writer->SetInputData(grid_);
 
     // Write
     writer->Write();  // TODO add check: if (writer->Write() == 0) { ERROR; }
 
-}  // VTKWriterMesh::Write
+}  // VTKWriterMesh::Write_
 
 }  // namespace pwr

@@ -193,7 +193,7 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     void SetNodalCoordinates_();
 
-    // CheckSetup_ has been successfully called
+    // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
 
     // Minimum global x-direction
