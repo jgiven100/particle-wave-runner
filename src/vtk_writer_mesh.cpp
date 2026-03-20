@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -130,7 +131,7 @@ void VTKWriterMesh::Write_(const std::string &filename) const {
     // ------------------------------------------------------------------------
 
     // Grab rank
-    const int rank = pwr::MPIUtilities::Rank();
+    const int rank = MPIUtilities::Rank();
 
     // Create array to save rank info
     auto rank_array = vtkSmartPointer<vtkIntArray>::New();
@@ -190,5 +191,61 @@ void VTKWriterMesh::Write_(const std::string &filename) const {
     writer->Write();  // TODO add check: if (writer->Write() == 0) { ERROR; }
 
 }  // VTKWriterMesh::Write_
+
+// ----------------------------------------------------------------------------
+// Write parallel output files
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::WriteParallel_(
+    const std::string &filename,
+    const std::vector<std::string> &piece_filenames) const {
+    // Open file
+    std::ofstream out(filename);  // TODO add check: if (!out) { ERROR; }
+
+    // Header
+    out << R"(<?xml version="1.0"?>)" << "\n";
+    out << R"(<VTKFile type="PUnstructuredGrid" version="0.1" byte_order="LittleEndian">)"
+        << "\n";
+
+    // Start PUnstructuredGrid
+    out << R"(  <PUnstructuredGrid>)" << "\n";
+
+    // "Float32" if vtkPoints uses float, "Float64" if double
+    const char *pointType = "Float32";
+
+    // PPoints declaration (must match the Points in each .vtu)
+    out << R"(    <PPoints>)" << "\n";
+    out << "      <PDataArray type=\"" << pointType
+        << "\" NumberOfComponents=\"3\" Name=\"Points\"/>\n";
+    out << R"(    </PPoints>)" << "\n";
+
+    // "Int32" for vtkIntArray
+    const char *rankType = "Int32";
+
+    // "UInt8" for vtkUnsignedCharArray (vtkGhostType)
+    const char *ghostType = "UInt8";
+
+    // vtkDataSetAttributes::GhostArrayName()
+    const char *ghostName = "vtkGhostType";
+
+    // PCellData: declare the cell arrays written in Write_
+    out << R"(    <PCellData>)" << "\n";
+    out << "      <PDataArray type=\"" << rankType
+        << "\" Name=\"rank\" NumberOfComponents=\"1\"/>\n";
+    out << "      <PDataArray type=\"" << ghostType << "\" Name=\"" << ghostName
+        << "\" NumberOfComponents=\"1\"/>\n";
+    out << R"(    </PCellData>)" << "\n";
+
+    // List pieces
+    for (const auto &pname : piece_filenames) {
+        out << "    <Piece Source=\"" << pname << "\"/>\n";
+    }
+
+    // Footer
+    out << R"(  </PUnstructuredGrid>)" << "\n";
+    out << R"(</VTKFile>)" << "\n";
+
+    // Close file
+    out.close();
+}  // VTKWriterMesh::WriteParallel_
 
 }  // namespace pwr

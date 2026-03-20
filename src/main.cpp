@@ -8,6 +8,7 @@
 #include "mesh_base.h"
 #include "mpi_environment.h"
 #include "mpi_utilities.h"
+#include "output_manager.h"
 #include "vtk_writer_base.h"
 #include "vtk_writer_mesh.h"
 
@@ -30,20 +31,18 @@ int main(int argc, char **argv) {
     const std::size_t ny = 4;
     const std::size_t nz = 4;
 
-    const std::shared_ptr<pwr::MeshBase> mesh = std::make_shared<pwr::Mesh>(
-        x_min, y_min, z_min, x_max, y_max, z_max, nx, ny, nz);
+    const std::shared_ptr<const pwr::MeshBase> mesh =
+        std::make_shared<const pwr::Mesh>(x_min, y_min, z_min, x_max, y_max,
+                                          z_max, nx, ny, nz);
 
-    // Generate VTK writer for mesh
-    const std::shared_ptr<pwr::VTKWriterBase> vtk_writer =
-        std::make_shared<pwr::VTKWriterMesh>(mesh);
+    // Create output manager
+    const std::size_t max_step = 100;  // To testing padding
 
-    // Set filename -- TODO class to handle I/O
-    const int step = 0;
-    std::string filename = "output/mesh_step" + std::to_string(step) + "_rank" +
-                           std::to_string(rank) + ".vtu";
+    const std::shared_ptr<pwr::OutputManager> output_manager =
+        std::make_shared<pwr::OutputManager>(mesh, max_step);
 
     // Write mesh
-    vtk_writer->Write(filename);
+    output_manager->WriteMeshFiles();
 
     return 0;
 }

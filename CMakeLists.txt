@@ -70,6 +70,7 @@ message(STATUS "VTK version: ${VTK_VERSION}")
 # Create the core project library
 add_library(pwr_core
     src/mesh.cpp
+    src/output_manager.cpp
     src/vtk_writer_mesh.cpp
 )
 

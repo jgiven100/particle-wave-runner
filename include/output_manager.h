@@ -1,16 +1,12 @@
-#ifndef VTK_WRITER_MESH_H
-#define VTK_WRITER_MESH_H
+#ifndef PWR_OUTPUT_MANAGER_H
+#define PWR_OUTPUT_MANAGER_H
 
-#include <vtkPoints.h>
-#include <vtkSmartPointer.h>
-#include <vtkUnstructuredGrid.h>
+#include <vtk_writer_base.h>
 
 #include <cassert>
+#include <cstddef>
 #include <memory>
 #include <string>
-#include <vector>
-
-#include "vtk_writer_base.h"
 
 namespace pwr {
 
@@ -19,14 +15,15 @@ namespace pwr {
 // and not the complete type
 class MeshBase;
 
-// vtk writer class for mesh
-class VTKWriterMesh : public VTKWriterBase {
+// Output manager class
+class OutputManager {
    public:
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const std::shared_ptr<const pwr::MeshBase>& mesh)
-        : mesh_(mesh) {
+    OutputManager(const std::shared_ptr<const pwr::MeshBase>& mesh,
+                  std::size_t max_step)
+        : mesh_(mesh), max_step_(max_step) {
         // Sanity check: pointer to mesh is not null
         assert(mesh_);
 
@@ -34,68 +31,82 @@ class VTKWriterMesh : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
+    // Constructor delegation
+    // ------------------------------------------------------------------------
+    OutputManager(const std::shared_ptr<const pwr::MeshBase>& mesh)
+        : OutputManager(mesh, 0) {}
+
+    // ------------------------------------------------------------------------
     // Destructor
     // ------------------------------------------------------------------------
-    ~VTKWriterMesh() override = default;
+    ~OutputManager() = default;
 
     // ------------------------------------------------------------------------
     // Delete copy constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const VTKWriterMesh&) = delete;
+    OutputManager(const OutputManager&) = delete;
 
     // ------------------------------------------------------------------------
     // Delete copy assignment
     // ------------------------------------------------------------------------
-    VTKWriterMesh& operator=(const VTKWriterMesh&) = delete;
+    OutputManager& operator=(const OutputManager&) = delete;
 
     // ------------------------------------------------------------------------
-    // Write output file
+    // Write mesh files
     // ------------------------------------------------------------------------
-    void Write(const std::string& filename) const override {
+    void WriteMeshFiles() {
         assert(setup_complete_);
-        Write_(filename);
+        WriteMeshFiles_();
     }
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
+    // Write particle files
     // ------------------------------------------------------------------------
-    void WriteParallel(
-        const std::string& filename,
-        const std::vector<std::string>& piece_filenames) const override {
+    void WriteParticleFiles() {
         assert(setup_complete_);
-        WriteParallel_(filename, piece_filenames);
+        WriteParticleFiles_();
     }
 
    private:
     // ------------------------------------------------------------------------
-    // Setup vtk writer for mesh
+    // Setup output manager
     // Calls:
-    //   InitializeWriter_()
+    //   InitializeMeshWriter_()
+    //   InitializeParticleWriter_()
     //   CheckSetup_()
     // ------------------------------------------------------------------------
     void Setup_();
 
     // ------------------------------------------------------------------------
-    // Initialize vtk writer for mesh
+    // Initialize output manager
     // ------------------------------------------------------------------------
-    void InitializeWriter_();
+    void InitializeOutputManager_();
 
     // ------------------------------------------------------------------------
-    // Check setup
-    // Making it this far means that `setup_complete_ should be set to `true`
+    // Initialize mesh writer
+    // ------------------------------------------------------------------------
+    void InitializeMeshWriter_();
+
+    // ------------------------------------------------------------------------
+    // Initialize particle writer
+    // ------------------------------------------------------------------------
+    void InitializeParticleWriter_();
+
+    // ------------------------------------------------------------------------
+    // Check output manager setup
+    // Making it this far means that `setup_complete_` should be set to `true`
     // ------------------------------------------------------------------------
     void CheckSetup_();
 
     // ------------------------------------------------------------------------
-    // Write output file
+    // Write mesh files
     // ------------------------------------------------------------------------
-    void Write_(const std::string& filename) const;
+    void WriteMeshFiles_();
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
-    // ------------------------------------------------------------------------
-    void WriteParallel_(const std::string& filename,
-                        const std::vector<std::string>& piece_filenames) const;
+    // Write particle files
+    // -----------------------------------------------------------------------
+    void WriteParticleFiles_();
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
@@ -103,13 +114,31 @@ class VTKWriterMesh : public VTKWriterBase {
     // Shared pointer to mesh object
     const std::shared_ptr<const pwr::MeshBase> mesh_;
 
-    // Smart vtk pointer to points
-    vtkSmartPointer<vtkPoints> points_;
+    // Shared pointer to vtk writer object for mesh
+    std::shared_ptr<const pwr::VTKWriterBase> vtk_writer_mesh_;
 
-    // Smart vtk pointer to grid
-    vtkSmartPointer<vtkUnstructuredGrid> grid_;
+    // Shared pointer to vtk writer object for particles
+    std::shared_ptr<const pwr::VTKWriterBase> vtk_writer_particles_;
+
+    // Output directory name
+    std::string output_dir_name_;
+
+    // Maximum step
+    std::size_t max_step_;
+
+    // Step padding size
+    int step_padding_;
+
+    // Rank padding size
+    int rank_padding_;
+
+    // Rank
+    int rank_;
+
+    // Size
+    int size_;
 };
 
 }  // namespace pwr
 
-#endif  // VTK_WRITER_MESH_H
+#endif  // PWR_OUTPUT_MANAGER_H
