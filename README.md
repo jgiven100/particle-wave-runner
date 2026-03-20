@@ -1,5 +1,15 @@
 # Particle Wave Runner
 
+This project is a playground for exploring scientific computing through the
+solution of numerical PDEs using the material point method (MPM). The code is
+developed from the ground up with parallel execution and scalability in mind.
+
+The ultimate demonstrator problem will focus on elastic wave propagation
+(hence "Particle Wave Runner" or "pwr") using a vareity of approaches: CutMesh
+MPM, High-order MPM, ect.
+
+Use at your own risk.
+
 ## Dependencies
 
 Compiling on WSL (Ubuntu)
