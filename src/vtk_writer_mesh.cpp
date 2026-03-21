@@ -209,7 +209,8 @@ void VTKWriterMesh::WriteParallel_(
     // Start PUnstructuredGrid
     out << R"(  <PUnstructuredGrid>)" << "\n";
 
-    // "Float32" if vtkPoints uses float, "Float64" if double
+    // Default type for vtkSmartPointer<vtkPoints>::New() is VTK_FLOAT; can
+    // check using vtkPoints::GetDataType() and definitions in vtkSetGet.h
     const char *pointType = "Float32";
 
     // PPoints declaration (must match the Points in each .vtu)
@@ -217,6 +218,10 @@ void VTKWriterMesh::WriteParallel_(
     out << "      <PDataArray type=\"" << pointType
         << "\" NumberOfComponents=\"3\" Name=\"Points\"/>\n";
     out << R"(    </PPoints>)" << "\n";
+
+    // PPointData is empty (for now)
+    out << R"(    <PPointData>)" << "\n";
+    out << R"(    </PPointData>)" << "\n";
 
     // "Int32" for vtkIntArray
     const char *rankType = "Int32";

@@ -1,6 +1,8 @@
 #ifndef PWR_UTILITIES_H
 #define PWR_UTILITIES_H
 
+#include <cassert>
+#include <string>
 #include <type_traits>
 
 namespace pwr {
@@ -37,6 +39,21 @@ class Utilities {
         return digits;
 
     }  // Utilities::CountDigits
+
+    // ------------------------------------------------------------------------
+    // Pad string
+    // ------------------------------------------------------------------------
+    static void PadString(std::string &str, const int width,
+                          const char c = '0') {
+        // Padding width should be greater or equal to string size
+        if (width <= static_cast<int>(str.size())) {
+            return;
+        }
+
+        // Pad char `c` on left
+        str.insert(0, width - str.size(), c);
+
+    }  // Utilities::PadString
 };
 
 }  // namespace pwr

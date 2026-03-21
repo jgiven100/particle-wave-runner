@@ -102,11 +102,11 @@ void OutputManager::WriteMeshFiles_() {
 
     // String padding for step
     std::string step_str = std::to_string(step);
-    step_str.insert(0, step_padding_ - step_str.size(), '0');
+    Utilities::PadString(step_str, step_padding_);
 
     // String padding for rank
     std::string rank_str = std::to_string(rank_);
-    rank_str.insert(0, rank_padding_ - rank_str.size(), '0');
+    Utilities::PadString(rank_str, rank_padding_);
 
     // Output filename
     const std::string filename_vtu =
@@ -131,7 +131,7 @@ void OutputManager::WriteMeshFiles_() {
         for (int r = 0; r < size_; ++r) {
             // String padding for rank
             std::string r_str = std::to_string(r);
-            r_str.insert(0, rank_padding_ - r_str.size(), '0');
+            Utilities::PadString(r_str, rank_padding_);
 
             // Save name
             piece_filenames.push_back("mesh_step" + step_str + "_" + r_str +
