@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <numeric>
@@ -67,8 +68,12 @@ void Mesh::PartitionMesh_() {
     std::vector<std::size_t> partitions_size;
     SetPartitionsPerDirection_(partitions_start, partitions_size);
 
+    // Set partitions ordering
+    std::vector<std::size_t> partitions_order;
+    SetPartitionsOrdering_(partitions_start, partitions_size, partitions_order);
+
     // Set number of elements (partition + ghost) for this partition
-    SetElementsNumbering_(partitions_start, partitions_size);
+    SetElementsNumbering_(partitions_start, partitions_size, partitions_order);
 
 }  // Mesh::PartitionMesh_
 
@@ -111,7 +116,7 @@ void Mesh::CheckSetup_() {
 void Mesh::SetPartitionsPerDirection_(
     std::vector<std::size_t> &partitions_start,
     std::vector<std::size_t> &partitions_size) {
-    // Get size
+    // Get size and rank
     const int size = pwr::MPIUtilities::Size();
     const int rank = pwr::MPIUtilities::Rank();
 
@@ -265,18 +270,123 @@ void Mesh::SetPartitionsPerDirection_(
 }  // Mesh::SetPartitionsPerDirection_
 
 // ----------------------------------------------------------------------------
+// Set partitions ordering
+// ----------------------------------------------------------------------------
+void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
+                                  std::vector<std::size_t> &partitions_size,
+                                  std::vector<std::size_t> &partitions_order) {
+    // Get size and rank
+    const int size = pwr::MPIUtilities::Size();
+    const int rank = pwr::MPIUtilities::Rank();
+
+    // Maximum size_t
+    const std::size_t max_size_t = std::numeric_limits<std::size_t>::max();
+
+    // Compute each block's centroid index
+    std::vector<std::size_t> centroid_scaled_indices(3 * size, max_size_t);
+
+    // Loop blocks
+    for (int b = 0; b < size; ++b) {
+        // Starting element index per direction
+        const std::size_t index_x_b_0 = partitions_start[3 * b + 0];
+        const std::size_t index_y_b_0 = partitions_start[3 * b + 1];
+        const std::size_t index_z_b_0 = partitions_start[3 * b + 2];
+
+        // Sanity check: starting index is less than global size
+        // per direction
+        assert(index_x_b_0 < nx_);
+        assert(index_y_b_0 < ny_);
+        assert(index_z_b_0 < nz_);
+
+        // Number of elements per direction
+        const std::size_t nx_b = partitions_size[3 * b + 0];
+        const std::size_t ny_b = partitions_size[3 * b + 1];
+        const std::size_t nz_b = partitions_size[3 * b + 2];
+
+        // Sanity check: size per direction is less than or equal
+        // to global size per direction
+        assert(nx_b <= nx_);
+        assert(ny_b <= ny_);
+        assert(nz_b <= nz_);
+
+        // Sanity check: no overflow on scaled centroid
+        assert(index_x_b_0 < max_size_t / 2);
+        assert(index_y_b_0 < max_size_t / 2);
+        assert(index_z_b_0 < max_size_t / 2);
+        assert(nx_b < max_size_t - 2 * index_x_b_0);
+        assert(ny_b < max_size_t - 2 * index_y_b_0);
+        assert(nz_b < max_size_t - 2 * index_z_b_0);
+
+        // Save centroid index
+        centroid_scaled_indices[3 * b + 0] = 2 * index_x_b_0 + nx_b;
+        centroid_scaled_indices[3 * b + 1] = 2 * index_y_b_0 + ny_b;
+        centroid_scaled_indices[3 * b + 2] = 2 * index_z_b_0 + nz_b;
+    }
+
+    // Each rank checks their own centroid indices
+    const std::size_t xc = centroid_scaled_indices[3 * rank + 0];
+    const std::size_t yc = centroid_scaled_indices[3 * rank + 1];
+    const std::size_t zc = centroid_scaled_indices[3 * rank + 2];
+
+    // Sanity check: centroid indices are initialized
+    assert(xc < max_size_t);
+    assert(yc < max_size_t);
+    assert(zc < max_size_t);
+
+    // Resize
+    partitions_order.resize(size);
+
+    // Set initial ordering: (rank == order)
+    for (int i = 0; i < size; ++i) {
+        partitions_order[i] = i;
+    }
+
+    // Sort `partitions_order` based on centroid coordinates
+    std::sort(partitions_order.begin(), partitions_order.end(),
+              [&](std::size_t a, std::size_t b) {
+                  const std::size_t za = centroid_scaled_indices[3 * a + 2];
+                  const std::size_t zb = centroid_scaled_indices[3 * b + 2];
+                  if (za != zb) {
+                      return za < zb;
+                  }
+
+                  const std::size_t ya = centroid_scaled_indices[3 * a + 1];
+                  const std::size_t yb = centroid_scaled_indices[3 * b + 1];
+                  if (ya != yb) {
+                      return ya < yb;
+                  }
+
+                  const std::size_t xa = centroid_scaled_indices[3 * a + 0];
+                  const std::size_t xb = centroid_scaled_indices[3 * b + 0];
+                  return xa < xb;
+              });
+
+}  // Mesh::SetPartitionsOrdering_
+
+// ----------------------------------------------------------------------------
 // Set elements numbering
 // ----------------------------------------------------------------------------
 void Mesh::SetElementsNumbering_(
     const std::vector<std::size_t> &partitions_start,
-    const std::vector<std::size_t> &partitions_size) {
-    // Get rank
+    const std::vector<std::size_t> &partitions_size,
+    const std::vector<std::size_t> &partitions_order) {
+    // Get rank and size
     const int rank = pwr::MPIUtilities::Rank();
+    const int size = pwr::MPIUtilities::Size();
+
+    // Set block index for this rank
+    const std::size_t block = partitions_order[rank];
+
+    // Sanity check: static_cast has defined behavior
+    assert(size > 0);
+
+    // Sanity check: block index is less than total partitions
+    assert(block < static_cast<std::size_t>(size));
 
     // Set number of elements per direction in the partitions
-    nx_partition_ = partitions_size[3 * rank + 0];
-    ny_partition_ = partitions_size[3 * rank + 1];
-    nz_partition_ = partitions_size[3 * rank + 2];
+    nx_partition_ = partitions_size[3 * block + 0];
+    ny_partition_ = partitions_size[3 * block + 1];
+    nz_partition_ = partitions_size[3 * block + 2];
 
     // Sanity check: partition size per direction is less than or equal
     // to global size per direction
@@ -291,9 +401,9 @@ void Mesh::SetElementsNumbering_(
     assert(num_elem_partition_ > 0);
 
     // Set starting element index per direction in the partition
-    index_x_partition_0_ = partitions_start[3 * rank + 0];
-    index_y_partition_0_ = partitions_start[3 * rank + 1];
-    index_z_partition_0_ = partitions_start[3 * rank + 2];
+    index_x_partition_0_ = partitions_start[3 * block + 0];
+    index_y_partition_0_ = partitions_start[3 * block + 1];
+    index_z_partition_0_ = partitions_start[3 * block + 2];
 
     // Sanity check: partition starting index is less than global
     // size per direction
@@ -376,13 +486,14 @@ void Mesh::SetElementsGlobalId_() {
     // NOTE: Global element ids should be zero-index and based on looping
     //       in the x-, y-, and z-directions (in order)
 
-    // Resize
-    elem_index_global_.resize(3 * num_elem_total_,
-                              std::numeric_limits<std::size_t>::max());
+    // Maximum size_t
+    const std::size_t max_size_t = std::numeric_limits<std::size_t>::max();
 
     // Resize
-    elem_id_global_.resize(num_elem_total_,
-                           std::numeric_limits<std::size_t>::max());
+    elem_index_global_.resize(3 * num_elem_total_, max_size_t);
+
+    // Resize
+    elem_id_global_.resize(num_elem_total_, max_size_t);
 
     // Indices for partition and ghost elements
     std::size_t e_partition = 0;
@@ -457,9 +568,9 @@ void Mesh::SetElementsGlobalId_() {
 
         // Sanity check: global element indices have been updated from
         // the initialized value
-        assert(x_i < std::numeric_limits<std::size_t>::max());
-        assert(y_i < std::numeric_limits<std::size_t>::max());
-        assert(z_i < std::numeric_limits<std::size_t>::max());
+        assert(x_i < max_size_t);
+        assert(y_i < max_size_t);
+        assert(z_i < max_size_t);
 
         // Sanity check: global element indices are less than global
         // number of elements per direction
@@ -472,7 +583,7 @@ void Mesh::SetElementsGlobalId_() {
 
         // Sanity check: global element ids have been updated from
         // the initialized value
-        assert(gid < std::numeric_limits<std::size_t>::max());
+        assert(gid < max_size_t);
 
         // Sanity check: global element ids are less than global
         // number of elements
@@ -480,7 +591,7 @@ void Mesh::SetElementsGlobalId_() {
     }
 
     // Resize global to local vector
-    elem_id_local_.resize(num_elem_, std::numeric_limits<std::size_t>::max());
+    elem_id_local_.resize(num_elem_, max_size_t);
 
     // Fill global to local vector
     for (std::size_t e = 0; e < elem_id_global_.size(); ++e) {
@@ -702,9 +813,9 @@ void Mesh::SetNodalCoordinates_() {
         const std::size_t z_i = elem_index_global_[3 * e + 2];
 
         // Compute coordinates at element corner
-        const double e_x = static_cast<double>(x_i) * dx_;
-        const double e_y = static_cast<double>(y_i) * dy_;
-        const double e_z = static_cast<double>(z_i) * dz_;
+        const double e_x = x_min_ + static_cast<double>(x_i) * dx_;
+        const double e_y = y_min_ + static_cast<double>(y_i) * dy_;
+        const double e_z = z_min_ + static_cast<double>(z_i) * dz_;
 
         // Loop nodes
         for (std::size_t n = 0; n < 8; ++n) {

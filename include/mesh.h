@@ -121,6 +121,7 @@ class Mesh : public MeshBase {
     // Partition mesh
     // Calls:
     //   SetPartitionsPerDirection_()
+    //   SetPartitionsOrdering_()
     //   SetElementsNumbering_()
     // ------------------------------------------------------------------------
     void PartitionMesh_();
@@ -156,12 +157,22 @@ class Mesh : public MeshBase {
                                     std::vector<std::size_t>& partitions_size);
 
     // ------------------------------------------------------------------------
+    // Set partitions ordering
+    // Update partition ordering from split history order to spatial order
+    // ------------------------------------------------------------------------
+    void SetPartitionsOrdering_(std::vector<std::size_t>& partitions_start,
+                                std::vector<std::size_t>& partitions_size,
+                                std::vector<std::size_t>& partitions_order);
+
+    // ------------------------------------------------------------------------
     // Set elements numbering
     // For partition and ghost elements correspond to this proc's block, set
     // the number of elements, starting indices, ending indices, etc.
     // ------------------------------------------------------------------------
-    void SetElementsNumbering_(const std::vector<std::size_t>& partitions_start,
-                               const std::vector<std::size_t>& partitions_size);
+    void SetElementsNumbering_(
+        const std::vector<std::size_t>& partitions_start,
+        const std::vector<std::size_t>& partitions_size,
+        const std::vector<std::size_t>& partitions_order);
 
     // ------------------------------------------------------------------------
     // Set elements global id
