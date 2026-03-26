@@ -66,7 +66,7 @@ cmake --install ~/vtk/build --prefix ~/vtk/install
 
 ## Compile
 
-From root, run
+From root directory, run
 
 ```
 cmake -S . -B build
@@ -75,7 +75,7 @@ cmake --build build
 
 ## Run
 
-From build, run
+From `build/` directory, run
 
 ```
 mpirun -n <N> ./particle_wave_runner
@@ -84,7 +84,7 @@ where `<N>` is the number of MPI processes
 
 ## Format
 
-From root, run
+From root directory, run
 
 ```
 sh format.sh
@@ -96,5 +96,16 @@ Install `paraview` (if needed)
 
 ```
 sudo apt install paraview
+```
+
+## Testing
+
+Testing utilizes Catch2 library. Amalgamated version `3.13.0` saved in
+`external/catch2/` directory.
+
+From `build/tests/` directory, run
+
+```
+./particle_wave_runner_tests
 ```
 

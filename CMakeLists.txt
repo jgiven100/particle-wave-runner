@@ -127,7 +127,12 @@ target_link_libraries(particle_wave_runner
 # Tests
 # -----------------------------------------------------------------------------
 
+# Check if build tests option is "on"
 if (PWR_BUILD_TESTS)
-    # TODO
+    # Enable testing
+    enable_testing()
+
+    # Add tests/ directory
+    add_subdirectory(tests/)
 endif()
 
