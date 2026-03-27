@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <unordered_map>
 #include <vector>
 
 #include "mesh_base.h"
@@ -10,7 +11,6 @@
 namespace pwr {
 
 // Mesh class
-// Store information about particles, nodes, cells, and neighbors
 class Mesh : public MeshBase {
    public:
     // ------------------------------------------------------------------------
@@ -80,16 +80,22 @@ class Mesh : public MeshBase {
         return num_elem_total_;
     }
 
-    // Get element-wise connectivity
-    const std::vector<std::size_t>& GetElemConnectivity() const override {
+    // Get number of active nodes
+    std::size_t GetNumActiveNodes() const override {
         assert(setup_complete_);
-        return conn_;
+        return num_active_nodes_;
     }
 
-    // Get active nodes
-    const std::vector<char>& GetActiveNodes() const override {
+    // Get global element-wise connectivity
+    const std::vector<std::size_t>& GetElemConnGlobal() const override {
         assert(setup_complete_);
-        return active_nodes_;
+        return conn_global_;
+    }
+
+    // Get local element-wise connectivity
+    const std::vector<std::size_t>& GetElemConnLocal() const override {
+        assert(setup_complete_);
+        return conn_local_;
     }
 
     // Get nodal coordinates
@@ -178,9 +184,7 @@ class Mesh : public MeshBase {
     // Set elements global id
     // For partition and ghost elements, set
     //   `elem_id_global_` (index is local id, value is global id)
-    //   `elem_id_local_`  (index is global id, value is local id)
-    // For now `elem_id_local_` is sized based on the total elements in the
-    // global domain... alternative is unordered_map?
+    //   `elem_id_local_`  (key is global id, value is local id)
     // ------------------------------------------------------------------------
     void SetElementsGlobalId_();
 
@@ -312,6 +316,9 @@ class Mesh : public MeshBase {
     // Number of global nodes
     std::size_t num_nodes_;
 
+    // Number of active nodes
+    std::size_t num_active_nodes_;
+
     // Element size x-direction
     double dx_;
 
@@ -327,36 +334,47 @@ class Mesh : public MeshBase {
     // std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
     // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
 
-    // Element global id with size num_elem_total_
+    // Element local-to-global id vector
+    // Size is number of partition + ghost elements (num_elem_total_)
     // Index is local element id
     // Value is global element id
     std::vector<std::size_t> elem_id_global_;
 
-    // Element local id with size num_elem_
-    // Index is gloabl element id
-    // Value is local element id
-    // std::numeric_limits<size_t>::max() is placeholder for elements *not*
-    // involved on this proc (partition or ghost)
-    std::vector<std::size_t> elem_id_local_;
+    // Element global-to-local id map
+    // Size: number of partition + ghost elements (num_elem_total_)
+    // Key: global element id
+    // Value: local element id
+    std::unordered_map<std::size_t, std::size_t> elem_id_local_;
 
-    // Element global index with size (3 * num_elem_total_)
+    // Element global index
+    // Size: (3 * num_elem_total_)
     // Flat convention: [e0x_i,e0y_i,e0z_i,e1x_i,e1y_i,e1z_i,...]
     std::vector<std::size_t> elem_index_global_;
 
-    // Element neighborhood with size (num_neighbors * num_elem_partition_),
+    // Element neighborhood
+    // Size: (num_neighbors * num_elem_partition_),
     // where num_neighbors = (2 * neighborhood_width_ + 1) ^ 3 - 1
     // Flat convention: [e0n0,e0n1,...,e0nN,e1n0,e1n1,...,e1nN,...]
     std::vector<std::size_t> elem_neighborhood_;
 
-    // Element connectivity with size (8 * num_elem_total_)
+    // Element connectivity using global node ids
+    // Size: (8 * num_elem_total_)
     // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
-    std::vector<std::size_t> conn_;
+    std::vector<std::size_t> conn_global_;
 
-    // Active node boolean with size num_nodes_
-    // Flat convetion: [n0,n1,...]
-    std::vector<char> active_nodes_;
+    // Element connectivity using local node ids
+    // Size: (8 * num_elem_total_)
+    // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
+    std::vector<std::size_t> conn_local_;
 
-    // Nodal coordinates with size (3 * num_nodes_)
+    // Nodal global-to-local id map
+    // Size: number of active nodes (num_active_nodes_)
+    // Key: global node id
+    // Value: local node id
+    std::unordered_map<std::size_t, std::size_t> nodal_id_local_;
+
+    // Nodal coordinates using local node indexing
+    // Size: (3 * num_active_nodes_)
     // Flat convention: [n0x,n0y,n0z,n1x,n1y,n1z,...]
     std::vector<double> nodal_coords_;
 };

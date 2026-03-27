@@ -2,6 +2,7 @@
 #define PWR_MESH_BASE_H
 
 #include <cstddef>
+#include <unordered_map>
 #include <vector>
 
 namespace pwr {
@@ -24,11 +25,14 @@ class MeshBase {
     // Get number of elements partition + ghost
     virtual std::size_t GetNumElemTotal() const = 0;
 
-    // Get element-wise connectivity
-    virtual const std::vector<std::size_t>& GetElemConnectivity() const = 0;
+    // Get number of active nodes
+    virtual std::size_t GetNumActiveNodes() const = 0;
 
-    // Get active nodes
-    virtual const std::vector<char>& GetActiveNodes() const = 0;
+    // Get global element-wise connectivity
+    virtual const std::vector<std::size_t>& GetElemConnGlobal() const = 0;
+
+    // Get local element-wise connectivity
+    virtual const std::vector<std::size_t>& GetElemConnLocal() const = 0;
 
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;

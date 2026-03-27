@@ -1,11 +1,14 @@
 #include "mesh.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <numeric>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "mpi_utilities.h"
@@ -590,13 +593,14 @@ void Mesh::SetElementsGlobalId_() {
         assert(gid < num_elem_);
     }
 
-    // Resize global to local vector
-    elem_id_local_.resize(num_elem_, max_size_t);
-
-    // Fill global to local vector
+    // Fill element global-to-local id map
     for (std::size_t e = 0; e < elem_id_global_.size(); ++e) {
-        elem_id_local_[elem_id_global_[e]] = e;
+        elem_id_local_.emplace(elem_id_global_[e], e);
     }
+
+    // Sanity check: number of elements in global-to-local id map matches
+    // number of partition + ghost elements
+    assert(elem_id_local_.size() == num_elem_total_);
 
 }  // Mesh::SetElementsGlobalId_
 
@@ -686,7 +690,9 @@ void Mesh::SetElementsNeighborhood_() {
                     assert(n_gid < num_elem_);
 
                     // Neighbor's local element id
-                    const std::size_t n_lid = elem_id_local_[n_gid];
+                    const auto it = elem_id_local_.find(n_gid);
+                    assert(it != elem_id_local_.end());
+                    const std::size_t n_lid = it->second;
 
                     // Sanity check: local id has been initialized
                     assert(n_lid < std::numeric_limits<std::size_t>::max());
@@ -723,7 +729,13 @@ void Mesh::SetElementsConnectivity_() {
     */
 
     // Resize based on 8 nodes per element
-    conn_.resize(8 * num_elem_total_, std::numeric_limits<std::size_t>::max());
+    conn_global_.resize(8 * num_elem_total_,
+                        std::numeric_limits<std::size_t>::max());
+    conn_local_.resize(8 * num_elem_total_,
+                       std::numeric_limits<std::size_t>::max());
+
+    // Keep track of active global node ids for partition + ghost elements
+    std::unordered_set<std::size_t> active_nodes;
 
     // Set nodes in x-y plane
     const std::size_t slab_xy = nodes_x_ * nodes_y_;
@@ -740,7 +752,7 @@ void Mesh::SetElementsConnectivity_() {
         const std::size_t y_ip1 = y_i + 1;
         const std::size_t z_ip1 = z_i + 1;
 
-        // Compute node ids
+        // Compute global node ids
         const std::size_t n0 = x_i + (nodes_x_ * y_i) + (slab_xy * z_i);
         const std::size_t n1 = n0 + 1;
 
@@ -753,31 +765,91 @@ void Mesh::SetElementsConnectivity_() {
         const std::size_t n6 = x_ip1 + (nodes_x_ * y_ip1) + (slab_xy * z_ip1);
         const std::size_t n7 = n6 - 1;
 
-        // Save node ids
-        conn_[8 * e + 0] = n0;
-        conn_[8 * e + 1] = n1;
-        conn_[8 * e + 2] = n2;
-        conn_[8 * e + 3] = n3;
-        conn_[8 * e + 4] = n4;
-        conn_[8 * e + 5] = n5;
-        conn_[8 * e + 6] = n6;
-        conn_[8 * e + 7] = n7;
+        // Save global node ids
+        conn_global_[8 * e + 0] = n0;
+        conn_global_[8 * e + 1] = n1;
+        conn_global_[8 * e + 2] = n2;
+        conn_global_[8 * e + 3] = n3;
+        conn_global_[8 * e + 4] = n4;
+        conn_global_[8 * e + 5] = n5;
+        conn_global_[8 * e + 6] = n6;
+        conn_global_[8 * e + 7] = n7;
+
+        // Update set of active gloabl node ids
+        active_nodes.insert(n0);
+        active_nodes.insert(n1);
+        active_nodes.insert(n2);
+        active_nodes.insert(n3);
+        active_nodes.insert(n4);
+        active_nodes.insert(n5);
+        active_nodes.insert(n6);
+        active_nodes.insert(n7);
+    }
+
+    // Count active nodes
+    num_active_nodes_ = active_nodes.size();
+
+    // Sanity check: must be non-zero active nodes
+    assert(num_active_nodes_ > 0);
+
+    // Sanity check: active nodes are less than or equal to total nodes
+    assert(num_active_nodes_ <= num_nodes_);
+
+    // Sort set of active nodes for consistent gloabl-to-local map
+    std::vector<std::size_t> active_nodes_v(active_nodes.begin(),
+                                            active_nodes.end());
+    std::sort(active_nodes_v.begin(), active_nodes_v.end());
+
+    // Local node id
+    std::size_t l_nid = 0;
+
+    // Loop global nodes
+    for (std::size_t g_nid : active_nodes_v) {
+        // Add global-to-local pair in map
+        nodal_id_local_.emplace(g_nid, l_nid);
+
+        // Increment local id
+        l_nid++;
+    }
+
+    // Sanity check: number of active nodes is the same size as nodal
+    // global-to-local id map
+    assert(num_active_nodes_ == nodal_id_local_.size());
+
+    // Loop connectivity
+    for (std::size_t n = 0; n < conn_global_.size(); ++n) {
+        // Grab global node id
+        const std::size_t g_nid = conn_global_[n];
+
+        // Grab corresponding local node id
+        const auto it = nodal_id_local_.find(g_nid);
+        assert(it != nodal_id_local_.end());
+        const std::size_t l_nid = it->second;
+
+        // Save local node id
+        conn_local_[n] = l_nid;
     }
 
     // Loop elements
     for (std::size_t e = 0; e < num_elem_total_; ++e) {
         // Loop nodes
         for (std::size_t n = 0; n < 8; ++n) {
-            // Grab each node id
-            const std::size_t nid = conn_[8 * e + n];
+            // Grab global and local node ids
+            const std::size_t g_nid = conn_global_[8 * e + n];
+            const std::size_t l_nid = conn_local_[8 * e + n];
 
-            // Sanity check: global node ids have been updated from
-            // the initialized value
-            assert(nid < std::numeric_limits<std::size_t>::max());
+            // Sanity check: global and local node ids have been updated
+            // from the initialized value
+            assert(g_nid < std::numeric_limits<std::size_t>::max());
+            assert(l_nid < std::numeric_limits<std::size_t>::max());
 
             // Sanity check: global node ids are less than global
             // number of nodes
-            assert(nid < num_nodes_);
+            assert(g_nid < num_nodes_);
+
+            // Sanity check: local node ids are less than active
+            // number of nodes
+            assert(l_nid < num_active_nodes_);
         }
     }
 
@@ -788,13 +860,11 @@ void Mesh::SetElementsConnectivity_() {
 // ----------------------------------------------------------------------------
 void Mesh::SetNodalCoordinates_() {
     // Resize based on {x,y,z} per node
-    nodal_coords_.resize(3 * num_nodes_, std::numeric_limits<double>::max());
-
-    // Resize for number of nodes
-    active_nodes_.resize(num_nodes_, 0);
+    nodal_coords_.resize(3 * num_active_nodes_,
+                         std::numeric_limits<double>::max());
 
     // Create offset map
-    const std::vector<double> offset{
+    const std::array<double, 24> offset{
         0.,  0.,  0.,   // node 0
         dx_, 0.,  0.,   // node 1
         dx_, dy_, 0.,   // node 2
@@ -804,6 +874,9 @@ void Mesh::SetNodalCoordinates_() {
         dx_, dy_, dz_,  // node 6
         0.,  dy_, dz_,  // node 7
     };
+
+    // Track which nodes have already been set
+    std::vector<char> set_nodes(num_active_nodes_, 0);
 
     // Loop elements
     for (std::size_t e = 0; e < num_elem_total_; ++e) {
@@ -820,37 +893,32 @@ void Mesh::SetNodalCoordinates_() {
         // Loop nodes
         for (std::size_t n = 0; n < 8; ++n) {
             // Grab current node
-            const std::size_t nid = conn_[8 * e + n];
+            const std::size_t l_nid = conn_local_[8 * e + n];
 
-            // Sanity check: node id is reasonable
-            assert(nid < num_nodes_);
+            // Sanity check: local node id is reasonable
+            assert(l_nid < num_active_nodes_);
 
             // Go to next node if this node is set to active (meaning that
             // the nodal coordinates have alreday been assigned)
-            if (active_nodes_[nid] != 0) {
+            if (set_nodes[l_nid] != 0) {
                 continue;
             }
 
             // Save nodal coordinates
-            nodal_coords_[3 * nid + 0] = e_x + offset[3 * n + 0];
-            nodal_coords_[3 * nid + 1] = e_y + offset[3 * n + 1];
-            nodal_coords_[3 * nid + 2] = e_z + offset[3 * n + 2];
+            nodal_coords_[3 * l_nid + 0] = e_x + offset[3 * n + 0];
+            nodal_coords_[3 * l_nid + 1] = e_y + offset[3 * n + 1];
+            nodal_coords_[3 * l_nid + 2] = e_z + offset[3 * n + 2];
 
-            // Update active nodes
-            active_nodes_[nid] = 1;
+            // Update set nodes list
+            set_nodes[l_nid] = 1;
         }
     }
 
     // Sanity check: active_nodes_ and nodal_coords_ are consistently sized
-    assert(active_nodes_.size() == nodal_coords_.size() / 3);
+    assert(set_nodes.size() == nodal_coords_.size() / 3);
 
     // Loop nodes
-    for (std::size_t n = 0; n < num_nodes_; ++n) {
-        // Go to next node if this node is not active
-        if (active_nodes_[n] == 0) {
-            continue;
-        }
-
+    for (std::size_t n = 0; n < num_active_nodes_; ++n) {
         // Sanity check: nodal coordinates in each direction are assigned
         assert(nodal_coords_[3 * n + 0] < std::numeric_limits<double>::max());
         assert(nodal_coords_[3 * n + 1] < std::numeric_limits<double>::max());

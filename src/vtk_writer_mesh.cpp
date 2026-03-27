@@ -39,26 +39,18 @@ void VTKWriterMesh::InitializeWriter_() {
     // Assign points
     // ------------------------------------------------------------------------
 
-    // Grab active nodes
-    const auto &active_nodes = mesh_->GetActiveNodes();
-
-    // Set the number of nodes in global mesh
-    const std::size_t num_nodes = active_nodes.size();
+    // Grab the number of active nodes for this partition
+    const std::size_t num_active_nodes = mesh_->GetNumActiveNodes();
 
     // Grab nodal coordinates
     const auto &nodal_coords = mesh_->GetNodalCoordinates();
 
     // Create vtk points object
     points_ = vtkSmartPointer<vtkPoints>::New();
-    points_->SetNumberOfPoints(num_nodes);
+    points_->SetNumberOfPoints(num_active_nodes);
 
     // Loop nodes
-    for (std::size_t n = 0; n < num_nodes; ++n) {
-        // Go to next node if this node is not active
-        if (active_nodes[n] == 0) {
-            continue;
-        }
-
+    for (std::size_t n = 0; n < num_active_nodes; ++n) {
         // Pointer to start of nodal coordinates for current node
         const double *coords = &nodal_coords[3 * n];
 
@@ -74,7 +66,7 @@ void VTKWriterMesh::InitializeWriter_() {
     // ------------------------------------------------------------------------
 
     // Grab mesh connectivity
-    const auto &conn = mesh_->GetElemConnectivity();
+    const auto &conn = mesh_->GetElemConnLocal();
 
     // Set the number of elements
     const std::size_t num_elem_total = mesh_->GetNumElemTotal();
@@ -203,8 +195,8 @@ void VTKWriterMesh::WriteParallel_(
 
     // Header
     out << R"(<?xml version="1.0"?>)" << "\n";
-    out << R"(<VTKFile type="PUnstructuredGrid" version="0.1" byte_order="LittleEndian">)"
-        << "\n";
+    out << R"(<VTKFile type="PUnstructuredGrid" )";
+    out << R"(version="0.1" byte_order="LittleEndian">)" << "\n";
 
     // Start PUnstructuredGrid
     out << R"(  <PUnstructuredGrid>)" << "\n";
