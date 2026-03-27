@@ -10,6 +10,7 @@ MPM, High-order MPM, ect.
 
 Use at your own risk.
 
+
 ## Dependencies
 
 Compiling on WSL (Ubuntu)
@@ -20,25 +21,18 @@ sudo apt upgrade
 sudo apt install -y
 ```
 
-Install `clang-format`
+
+Install `clang-format`, `cmake`, and `mpi`
 
 ```
 sudo apt install clang-format
-```
-
-Install `cmake`
-
-```
 sudo apt install cmake
-```
-
-Install `mpi`
-
-```
 sudo apt install libopenmpi-dev
 ```
 
+
 Install `vtk`
+
 ```
 mkdir ~/vtk
 
@@ -62,13 +56,16 @@ cmake --build ~/vtk/build -j 1
 
 cmake --install ~/vtk/build --prefix ~/vtk/install
 ```
+
 > `-j 1` is very slow, but stable for WSL. Ignore compiler warnings.
+
 
 Install `Catch2`
 
-Save preferred release into `~/Catch-X.X.XX/` directory.
+Save preferred release into `~/Catch-X.XX.X/` directory.
 
-From `~/Catch2-X.X.XX/` directory, run
+From `~/Catch2-X.XX.X/` directory, run
+
 ```
 cmake -B build
 
@@ -76,7 +73,9 @@ cmake --build build
 
 cmake --install build --prefix install
 ```
-> CMakeLists.txt currently expects Version 3.13.00; adjust as needed.
+
+> CMakeLists.txt currently expects Version 3.13.0; adjust as needed.
+
 
 ## Compile
 
@@ -87,6 +86,7 @@ cmake -S . -B build
 cmake --build build
 ```
 
+
 ## Run
 
 From `build/` directory, run
@@ -94,7 +94,9 @@ From `build/` directory, run
 ```
 mpirun -n <N> ./particle_wave_runner
 ```
+
 where `<N>` is the number of MPI processes
+
 
 ## Format
 
@@ -104,6 +106,7 @@ From root directory, run
 sh format.sh
 ```
 
+
 ## Visualization
 
 Install `paraview`
@@ -111,6 +114,7 @@ Install `paraview`
 ```
 sudo apt install paraview
 ```
+
 
 ## Testing
 
@@ -121,5 +125,7 @@ From `build/tests/` directory, run
 ```
 mpirun -n <N> ./particle_wave_runner_tests
 ```
+
 where `<N>` is the number of MPI processes
 
+> Only run using up to four MPI processes.
