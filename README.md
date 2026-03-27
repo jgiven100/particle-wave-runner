@@ -64,6 +64,20 @@ cmake --install ~/vtk/build --prefix ~/vtk/install
 ```
 > `-j 1` is very slow, but stable for WSL. Ignore compiler warnings.
 
+Install `Catch2`
+
+Save preferred release into `~/Catch-X.X.XX/` directory.
+
+From `~/Catch2-X.X.XX/` directory, run
+```
+cmake -B build
+
+cmake --build build
+
+cmake --install build --prefix install
+```
+> CMakeLists.txt currently expects Version 3.13.00; adjust as needed.
+
 ## Compile
 
 From root directory, run
@@ -92,7 +106,7 @@ sh format.sh
 
 ## Visualization
 
-Install `paraview` (if needed)
+Install `paraview`
 
 ```
 sudo apt install paraview
@@ -100,12 +114,12 @@ sudo apt install paraview
 
 ## Testing
 
-Testing utilizes Catch2 library. Amalgamated version `3.13.0` saved in
-`external/catch2/` directory.
+Testing utilizes Catch2 library.
 
 From `build/tests/` directory, run
 
 ```
-./particle_wave_runner_tests
+mpirun -n <N> ./particle_wave_runner_tests
 ```
+where `<N>` is the number of MPI processes
 
