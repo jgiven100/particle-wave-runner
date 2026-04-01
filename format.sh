@@ -1,4 +1,8 @@
 #!/bin/bash
-find include/ -iname *.h -o -iname *.cpp | xargs clang-format -style=file -i
-find src/ -iname *.h -o -iname *.cpp | xargs clang-format -style=file -i
-find tests/ -iname *.h -o -iname *.cpp | xargs clang-format -style=file -i
+
+for dir in include src tests;
+do
+    find "$dir" \
+        -iname *.h -o -iname *.cpp -o -iname *.tcc \
+    | xargs clang-format -style=file -i
+done

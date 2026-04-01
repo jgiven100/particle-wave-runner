@@ -5,6 +5,11 @@
 
 namespace pwr {
 
+template <typename T>
+struct MPIType {
+    static_assert(sizeof(T) == 0, "Unsupported MPI datatype");
+};
+
 // MPI Utility class
 // Place for useful MPI functions to simplify remainder of codebase
 class MPIUtilities {
@@ -30,9 +35,97 @@ class MPIUtilities {
     // ------------------------------------------------------------------------
     // MPI barrier
     // ------------------------------------------------------------------------
-    static void Barrier() { MPI_Barrier(MPI_COMM_WORLD); }
+    static void Barrier(MPI_Comm comm = MPI_COMM_WORLD) { MPI_Barrier(comm); }
+
+    // ------------------------------------------------------------------------
+    // Get MPI type
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static MPI_Datatype Type() {
+        return MPIType<T>::value;
+    }
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllReduce(const T& sendbuf, T& recvbuf, MPI_Op op,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce maximum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static T AllReduceMax(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce minimum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static T AllReduceMin(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce sum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static T AllReduceSum(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce in place
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllReduceInPlace(T& sendbuf, MPI_Op op,
+                                 MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce maximum in place
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllReduceMaxInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce minimum in place
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllReduceMinInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce sum in place
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllReduceSumInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void Reduce(const T& sendbuf, T& recvbuf, MPI_Op op, int root,
+                       MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce maximum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceMax(const T& sendbuf, T& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce maximum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceMin(const T& sendbuf, T& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce sum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceSum(const T& sendbuf, T& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
 };
 
 }  // namespace pwr
+
+#include "mpi_utilities.tcc"
 
 #endif  // PWR_MPI_UTILITIES_H
