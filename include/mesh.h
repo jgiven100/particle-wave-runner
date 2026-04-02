@@ -81,9 +81,9 @@ class Mesh : public MeshBase {
     }
 
     // Get number of active nodes
-    std::size_t GetNumActiveNodes() const override {
+    std::size_t GetNumNodesActive() const override {
         assert(setup_complete_);
-        return num_active_nodes_;
+        return num_nodes_active_;
     }
 
     // Get global element-wise connectivity
@@ -317,7 +317,7 @@ class Mesh : public MeshBase {
     std::size_t num_nodes_;
 
     // Number of active nodes
-    std::size_t num_active_nodes_;
+    std::size_t num_nodes_active_;
 
     // Element size x-direction
     double dx_;
@@ -368,13 +368,13 @@ class Mesh : public MeshBase {
     std::vector<std::size_t> conn_local_;
 
     // Nodal global-to-local id map
-    // Size: number of active nodes (num_active_nodes_)
+    // Size: number of active nodes (num_nodes_active_)
     // Key: global node id
     // Value: local node id
     std::unordered_map<std::size_t, std::size_t> nodal_id_local_;
 
     // Nodal coordinates using local node indexing
-    // Size: (3 * num_active_nodes_)
+    // Size: (3 * num_nodes_active_)
     // Flat convention: [n0x,n0y,n0z,n1x,n1y,n1z,...]
     std::vector<double> nodal_coords_;
 };

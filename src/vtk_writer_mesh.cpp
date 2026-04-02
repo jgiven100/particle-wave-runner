@@ -40,17 +40,17 @@ void VTKWriterMesh::InitializeWriter_() {
     // ------------------------------------------------------------------------
 
     // Grab the number of active nodes for this partition
-    const std::size_t num_active_nodes = mesh_->GetNumActiveNodes();
+    const std::size_t num_nodes_active = mesh_->GetNumNodesActive();
 
     // Grab nodal coordinates
     const auto &nodal_coords = mesh_->GetNodalCoordinates();
 
     // Create vtk points object
     points_ = vtkSmartPointer<vtkPoints>::New();
-    points_->SetNumberOfPoints(num_active_nodes);
+    points_->SetNumberOfPoints(num_nodes_active);
 
     // Loop nodes
-    for (std::size_t n = 0; n < num_active_nodes; ++n) {
+    for (std::size_t n = 0; n < num_nodes_active; ++n) {
         // Pointer to start of nodal coordinates for current node
         const double *coords = &nodal_coords[3 * n];
 

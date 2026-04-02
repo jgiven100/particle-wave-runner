@@ -26,7 +26,7 @@ class MeshBase {
     virtual std::size_t GetNumElemTotal() const = 0;
 
     // Get number of active nodes
-    virtual std::size_t GetNumActiveNodes() const = 0;
+    virtual std::size_t GetNumNodesActive() const = 0;
 
     // Get global element-wise connectivity
     virtual const std::vector<std::size_t>& GetElemConnGlobal() const = 0;

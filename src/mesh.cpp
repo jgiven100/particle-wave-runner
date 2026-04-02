@@ -787,13 +787,13 @@ void Mesh::SetElementsConnectivity_() {
     }
 
     // Count active nodes
-    num_active_nodes_ = active_nodes.size();
+    num_nodes_active_ = active_nodes.size();
 
     // Sanity check: must be non-zero active nodes
-    assert(num_active_nodes_ > 0);
+    assert(num_nodes_active_ > 0);
 
     // Sanity check: active nodes are less than or equal to total nodes
-    assert(num_active_nodes_ <= num_nodes_);
+    assert(num_nodes_active_ <= num_nodes_);
 
     // Sort set of active nodes for consistent gloabl-to-local map
     std::vector<std::size_t> active_nodes_v(active_nodes.begin(),
@@ -814,7 +814,7 @@ void Mesh::SetElementsConnectivity_() {
 
     // Sanity check: number of active nodes is the same size as nodal
     // global-to-local id map
-    assert(num_active_nodes_ == nodal_id_local_.size());
+    assert(num_nodes_active_ == nodal_id_local_.size());
 
     // Loop connectivity
     for (std::size_t n = 0; n < conn_global_.size(); ++n) {
@@ -849,7 +849,7 @@ void Mesh::SetElementsConnectivity_() {
 
             // Sanity check: local node ids are less than active
             // number of nodes
-            assert(l_nid < num_active_nodes_);
+            assert(l_nid < num_nodes_active_);
         }
     }
 
@@ -860,7 +860,7 @@ void Mesh::SetElementsConnectivity_() {
 // ----------------------------------------------------------------------------
 void Mesh::SetNodalCoordinates_() {
     // Resize based on {x,y,z} per node
-    nodal_coords_.resize(3 * num_active_nodes_,
+    nodal_coords_.resize(3 * num_nodes_active_,
                          std::numeric_limits<double>::max());
 
     // Create offset map
@@ -876,7 +876,7 @@ void Mesh::SetNodalCoordinates_() {
     };
 
     // Track which nodes have already been set
-    std::vector<char> set_nodes(num_active_nodes_, 0);
+    std::vector<char> set_nodes(num_nodes_active_, 0);
 
     // Loop elements
     for (std::size_t e = 0; e < num_elem_total_; ++e) {
@@ -896,7 +896,7 @@ void Mesh::SetNodalCoordinates_() {
             const std::size_t l_nid = conn_local_[8 * e + n];
 
             // Sanity check: local node id is reasonable
-            assert(l_nid < num_active_nodes_);
+            assert(l_nid < num_nodes_active_);
 
             // Go to next node if this node is set to active (meaning that
             // the nodal coordinates have alreday been assigned)
@@ -918,7 +918,7 @@ void Mesh::SetNodalCoordinates_() {
     assert(set_nodes.size() == nodal_coords_.size() / 3);
 
     // Loop nodes
-    for (std::size_t n = 0; n < num_active_nodes_; ++n) {
+    for (std::size_t n = 0; n < num_nodes_active_; ++n) {
         // Sanity check: nodal coordinates in each direction are assigned
         assert(nodal_coords_[3 * n + 0] < std::numeric_limits<double>::max());
         assert(nodal_coords_[3 * n + 1] < std::numeric_limits<double>::max());
