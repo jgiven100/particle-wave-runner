@@ -2,8 +2,11 @@
 #define PWR_UTILITIES_H
 
 #include <cassert>
+#include <iostream>
 #include <string>
 #include <type_traits>
+
+#include "mpi_utilities.h"
 
 namespace pwr {
 
@@ -54,6 +57,17 @@ class Utilities {
         str.insert(0, width - str.size(), c);
 
     }  // Utilities::PadString
+
+    // ------------------------------------------------------------------------
+    // Print error on root
+    // ------------------------------------------------------------------------
+    static void PrintErrorOnRoot(const std::string &str, const int root = 0) {
+        // Only print on root (rank 0)
+        if (pwr::MPIUtilities::Rank() == root) {
+            std::cerr << "\x1b[1;31m[ERROR]\x1b[0m " << str << std::endl;
+        }
+
+    }  // PrintErrorOnRoot
 };
 
 }  // namespace pwr
