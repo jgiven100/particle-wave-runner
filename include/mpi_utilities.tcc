@@ -12,37 +12,37 @@ namespace pwr {
 // ----------------------------------------------------------------------------
 template <>
 struct MPIType<char> {
-    static inline MPI_Datatype value = MPI_CHAR;
+    static inline MPI_Datatype type = MPI_CHAR;
 };
 
 template <>
 struct MPIType<int> {
-    static inline MPI_Datatype value = MPI_INT;
+    static inline MPI_Datatype type = MPI_INT;
 };
 
 template <>
 struct MPIType<unsigned> {
-    static inline MPI_Datatype value = MPI_UNSIGNED;
+    static inline MPI_Datatype type = MPI_UNSIGNED;
 };
 
 template <>
 struct MPIType<unsigned long> {
-    static inline MPI_Datatype value = MPI_UNSIGNED_LONG;
+    static inline MPI_Datatype type = MPI_UNSIGNED_LONG;
 };
 
 template <>
 struct MPIType<unsigned long long> {
-    static inline MPI_Datatype value = MPI_UNSIGNED_LONG_LONG;
+    static inline MPI_Datatype type = MPI_UNSIGNED_LONG_LONG;
 };
 
 template <>
 struct MPIType<float> {
-    static inline MPI_Datatype value = MPI_FLOAT;
+    static inline MPI_Datatype type = MPI_FLOAT;
 };
 
 template <>
 struct MPIType<double> {
-    static inline MPI_Datatype value = MPI_DOUBLE;
+    static inline MPI_Datatype type = MPI_DOUBLE;
 };
 
 // ----------------------------------------------------------------------------
@@ -55,13 +55,13 @@ void MPIUtilities::AllReduce(const T& sendbuf, T& recvbuf, MPI_Op op,
     static_assert(std::is_trivially_copyable_v<T>,
                   "MPI_Allreduce requires trivially copyable type");
 
-    int err = MPI_Allreduce(     // All reduce
-        &sendbuf,                // Send buffer
-        &recvbuf,                // Receive buffer
-        1,                       // Count
-        pwr::MPIType<T>::value,  // MPI datatype
-        op,                      // MPI operation
-        comm);                   // MPI communicator
+    int err = MPI_Allreduce(    // All reduce
+        &sendbuf,               // Send buffer
+        &recvbuf,               // Receive buffer
+        1,                      // Count
+        pwr::MPIType<T>::type,  // MPI datatype
+        op,                     // MPI operation
+        comm);                  // MPI communicator
 
     // Check for successful MPI_Allreduce
     if (err != MPI_SUCCESS) {
@@ -125,13 +125,13 @@ void MPIUtilities::AllReduceInPlace(T& send_recv_buf, MPI_Op op,
     static_assert(std::is_trivially_copyable_v<T>,
                   "MPI_Allreduce requires trivially copyable type");
 
-    int err = MPI_Allreduce(     // All reduce
-        MPI_IN_PLACE,            // MPI_IN_PLACE value
-        &send_recv_buf,          // Send and receive buffer
-        1,                       // Count
-        pwr::MPIType<T>::value,  // MPI datatype
-        op,                      // MPI operation
-        comm);                   // MPI communicator
+    int err = MPI_Allreduce(    // All reduce
+        MPI_IN_PLACE,           // MPI_IN_PLACE value
+        &send_recv_buf,         // Send and receive buffer
+        1,                      // Count
+        pwr::MPIType<T>::type,  // MPI datatype
+        op,                     // MPI operation
+        comm);                  // MPI communicator
 
     // Check for successful MPI_Allreduce
     if (err != MPI_SUCCESS) {
@@ -180,14 +180,14 @@ void MPIUtilities::Reduce(const T& sendbuf, T& recvbuf, MPI_Op op, int root,
     static_assert(std::is_trivially_copyable_v<T>,
                   "MPI_Reduce requires trivially copyable type");
 
-    int err = MPI_Reduce(        // Reduce
-        &sendbuf,                // Send buffer
-        &recvbuf,                // Receive buffer
-        1,                       // Count
-        pwr::MPIType<T>::value,  // MPI datatype
-        op,                      // MPI operation
-        root,                    // Root
-        comm);                   // MPI communicator
+    int err = MPI_Reduce(       // Reduce
+        &sendbuf,               // Send buffer
+        &recvbuf,               // Receive buffer
+        1,                      // Count
+        pwr::MPIType<T>::type,  // MPI datatype
+        op,                     // MPI operation
+        root,                   // Root
+        comm);                  // MPI communicator
 
     // Check for successful MPI_Reduce
     if (err != MPI_SUCCESS) {

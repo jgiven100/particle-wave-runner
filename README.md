@@ -123,9 +123,11 @@ Testing utilizes Catch2 library.
 From `build/tests/` directory, run
 
 ```
-mpirun -n <N> ./particle_wave_runner_tests
+mpirun -n <N> ./particle_wave_runner_tests "[tag]"
 ```
 
-where `<N>` is the number of MPI processes
+where `<N>` is the number of MPI processes (up to `-n 4`)
 
-> Only run using up to four MPI processes.
+Must include `"[tag]"`. Currently available tags include:
+`"[mesh]"`, `"[mpi]"`
+

@@ -13,6 +13,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{HOME}/Catch2-3.13.0/install")
 add_executable(particle_wave_runner_tests
     test_main.cpp
     mesh_test.cpp
+    mpi_utilities_test.cpp
 )
 
 # Include the header files

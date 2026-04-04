@@ -12,14 +12,10 @@
 #include "mesh_base.h"
 #include "mpi_utilities.h"
 
-TEST_CASE("Mesh") {
+TEST_CASE("Mesh", "[mesh]") {
     // Grab rank and size
     const int rank = pwr::MPIUtilities::Rank();
     const int size = pwr::MPIUtilities::Size();
-
-    // ------------------------------------------------------------------------
-    // Create mesh objects
-    // ------------------------------------------------------------------------
 
     // Place to save meshes created using constructor
     std::vector<std::shared_ptr<const pwr::MeshBase>> meshes(3);
@@ -74,9 +70,11 @@ TEST_CASE("Mesh") {
         2, 1, 5, 6};  // East face
 
     // ------------------------------------------------------------------------
-    // Test number of partition elements
+    // Number of partition elements
     // ------------------------------------------------------------------------
-    SECTION("Number of partition elements") {
+    {
+        INFO("Number of partition elements");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -103,12 +101,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Number of partition elements
 
     // ------------------------------------------------------------------------
-    // Test number of ghost elements
+    // Number of ghost elements
     // ------------------------------------------------------------------------
-    SECTION("Number of ghost elements") {
+    {
+        INFO("Number of ghost elements");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -135,12 +136,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Number of ghost elements
 
     // ------------------------------------------------------------------------
-    // Test number of partition + ghost elements
+    // Number of partition + ghost elements
     // ------------------------------------------------------------------------
-    SECTION("Number of partition + ghost elements") {
+    {
+        INFO("Number of partition + ghost elements");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -171,12 +175,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Number of partition + ghost elements
 
     // ------------------------------------------------------------------------
-    // Test number of active nodes
+    // Number of active nodes
     // ------------------------------------------------------------------------
-    SECTION("Number of active nodes") {
+    {
+        INFO("Number of active nodes");
+
         // Set solution (number of active nodes)
         // Computed by hand [02 April 2026]
         const std::array<std::size_t, 16> num_nodes_active = {
@@ -211,12 +218,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Number of active nodes
 
     // ------------------------------------------------------------------------
-    // Test local element connectivity
+    // Local element connectivity
     // ------------------------------------------------------------------------
-    SECTION("Local element connectivity") {
+    {
+        INFO("Local element connectivity");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -314,12 +324,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Local element connectivity
 
     // ------------------------------------------------------------------------
-    // Test global element connectivity
+    // Global element connectivity
     // ------------------------------------------------------------------------
-    SECTION("Global element connectivity") {
+    {
+        INFO("Global element connectivity");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -417,12 +430,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Global element connectivity
 
     // ------------------------------------------------------------------------
-    // Test nodal coordinates
+    // Nodal coordinates
     // ------------------------------------------------------------------------
-    SECTION("Nodal coordinates") {
+    {
+        INFO("Nodal coordinates");
+
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
@@ -473,12 +489,15 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
+
+    }  // Nodal coordinates
 
     // ------------------------------------------------------------------------
-    // Check volume
+    // Element volume
     // ------------------------------------------------------------------------
-    SECTION("Nodal coordinates") {
+    {
+        INFO("Element volume");
+
         // Compute element volume
         const double elem_vol = (x_max - x_min) * (y_max - y_min) *
                                 (z_max - z_min) / (nx * ny * nz);
@@ -550,5 +569,7 @@ TEST_CASE("Mesh") {
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
-    }
-}
+
+    }  // Element volume
+
+}  // TEST_CASE("Mesh")

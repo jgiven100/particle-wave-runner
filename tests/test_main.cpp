@@ -21,6 +21,28 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    // Require "[tag]" to call `session.run(argc, argv)`
+    bool has_tag = false;
+
+    for (int i = 1; i < argc; ++i) {
+        // Current argument
+        std::string arg(argv[i]);
+
+        // Tags always contain `[`
+        if (arg.find('[') != std::string::npos) {
+            has_tag = true;
+            break;
+        }
+    }
+
+    if (!has_tag) {
+        std::stringstream oss;
+        oss << "No tag provided with `./particle_wave_runner_test`.";
+        pwr::Utilities::PrintErrorOnRoot(oss.str());
+
+        return -1;
+    }
+
     // Create Catch2 session
     Catch::Session session;
 
