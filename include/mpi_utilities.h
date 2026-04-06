@@ -42,7 +42,7 @@ class MPIUtilities {
     // ------------------------------------------------------------------------
     template <typename T>
     static MPI_Datatype Type() {
-        return MPIType<T>::value;
+        return MPIType<T>::type;
     }
 
     // ------------------------------------------------------------------------
