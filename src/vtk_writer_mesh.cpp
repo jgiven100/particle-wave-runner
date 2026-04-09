@@ -243,6 +243,7 @@ void VTKWriterMesh::WriteParallel_(
 
     // Close file
     out.close();
+
 }  // VTKWriterMesh::WriteParallel_
 
 }  // namespace pwr
