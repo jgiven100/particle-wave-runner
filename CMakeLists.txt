@@ -71,6 +71,8 @@ message(STATUS "VTK version: ${VTK_VERSION}")
 add_library(pwr_core
     src/mesh.cpp
     src/output_manager.cpp
+    src/solver_explicit.cpp
+    src/solver_implicit.cpp
     src/vtk_writer_mesh.cpp
 )
 
