@@ -69,6 +69,7 @@ message(STATUS "VTK version: ${VTK_VERSION}")
 
 # Create the core project library
 add_library(pwr_core
+    src/field.cpp
     src/mesh.cpp
     src/output_manager.cpp
     src/solver_explicit.cpp
