@@ -99,6 +99,9 @@ void Mesh::ConnectMesh_() {
     // Set connectivity
     SetElementsConnectivity_();
 
+    // Set nodal ownership
+    SetNodalOwnership_();
+
     // Set nodal coordinates
     SetNodalCoordinates_();
 
@@ -713,13 +716,14 @@ void Mesh::SetElementsNeighborhood_() {
 // Set elements connectivity
 // ----------------------------------------------------------------------------
 void Mesh::SetElementsConnectivity_() {
-    // Connectivity ordering matches gmsh convetion for hex1
+    // Connectivity ordering
+    // Be careful... ordering does not match gmsh or vtk convetion for hex1
     /*
-    //  7----------6
+    //  6----------7
     //  |\         |\
     //  | \        | \
     //  |  \       |  \
-    //  |   3------|---2
+    //  |   2------|---3
     //  |   |      |   |      y
     //  4----------5   |      ^
     //   \  |       \  |   z  |
@@ -748,7 +752,6 @@ void Mesh::SetElementsConnectivity_() {
         const std::size_t z_i = elem_index_global_[3 * e + 2];
 
         // Helpful plus one index for y and z
-        const std::size_t x_ip1 = x_i + 1;
         const std::size_t y_ip1 = y_i + 1;
         const std::size_t z_ip1 = z_i + 1;
 
@@ -756,14 +759,14 @@ void Mesh::SetElementsConnectivity_() {
         const std::size_t n0 = x_i + (nodes_x_ * y_i) + (slab_xy * z_i);
         const std::size_t n1 = n0 + 1;
 
-        const std::size_t n2 = x_ip1 + (nodes_x_ * y_ip1) + (slab_xy * z_i);
-        const std::size_t n3 = n2 - 1;
+        const std::size_t n2 = x_i + (nodes_x_ * y_ip1) + (slab_xy * z_i);
+        const std::size_t n3 = n2 + 1;
 
         const std::size_t n4 = x_i + (nodes_x_ * y_i) + (slab_xy * z_ip1);
         const std::size_t n5 = n4 + 1;
 
-        const std::size_t n6 = x_ip1 + (nodes_x_ * y_ip1) + (slab_xy * z_ip1);
-        const std::size_t n7 = n6 - 1;
+        const std::size_t n6 = x_i + (nodes_x_ * y_ip1) + (slab_xy * z_ip1);
+        const std::size_t n7 = n6 + 1;
 
         // Save global node ids
         conn_global_[8 * e + 0] = n0;
@@ -796,15 +799,18 @@ void Mesh::SetElementsConnectivity_() {
     assert(num_nodes_active_ <= num_nodes_);
 
     // Sort set of active nodes for consistent gloabl-to-local map
-    std::vector<std::size_t> active_nodes_v(active_nodes.begin(),
-                                            active_nodes.end());
-    std::sort(active_nodes_v.begin(), active_nodes_v.end());
+    nodal_id_global_.assign(active_nodes.begin(), active_nodes.end());
+    std::sort(nodal_id_global_.begin(), nodal_id_global_.end());
+
+    // Sanity check: number of active nodes is the same size as nodal
+    // local-to-global vector
+    assert(num_nodes_active_ == nodal_id_global_.size());
 
     // Local node id
     std::size_t l_nid = 0;
 
     // Loop global nodes
-    for (std::size_t g_nid : active_nodes_v) {
+    for (std::size_t g_nid : nodal_id_global_) {
         // Add global-to-local pair in map
         nodal_id_local_.emplace(g_nid, l_nid);
 
@@ -856,6 +862,117 @@ void Mesh::SetElementsConnectivity_() {
 }  // Mesh::SetElementsConnectivity_
 
 // ----------------------------------------------------------------------------
+// Set nodal ownership
+// ----------------------------------------------------------------------------
+void Mesh::SetNodalOwnership_() {
+    // Resize based on number of active nodes
+    nodal_ownership_.resize(num_nodes_active_, 0);
+
+    // Create offset map
+    const std::array<int, 24> offset{
+        -1, -1, -1,  // element 0
+        0,  -1, -1,  // element 1
+        0,  0,  -1,  // element 2
+        -1, 0,  -1,  // element 3
+        -1, -1, 0,   // element 4
+        0,  -1, 0,   // element 5
+        0,  0,  0,   // element 6
+        -1, 0,  0,   // element 7
+    };
+
+    // Set nodes in the x-y plane
+    const std::size_t slab_xy = nodes_x_ * nodes_y_;
+
+    // Useful to check if static_cast has defined behavior
+    const std::size_t max_int =
+        static_cast<std::size_t>(std::numeric_limits<int>::max());
+
+    // Sanity check: static_cast has defined behavior
+    assert(nx_ < max_int);
+    assert(ny_ < max_int);
+    assert(nz_ < max_int);
+
+    // Avoid repeated casts
+    const int nx_int = static_cast<int>(nx_);
+    const int ny_int = static_cast<int>(ny_);
+    const int nz_int = static_cast<int>(nz_);
+
+    // Loop nodes
+    for (std::size_t l_nid = 0; l_nid < num_nodes_active_; ++l_nid) {
+        // Grab global node id
+        const std::size_t g_nid = nodal_id_global_[l_nid];
+
+        // Compute element index in each direction for global node id
+        const std::size_t nz_i0 = g_nid / slab_xy;
+        const std::size_t rem = g_nid % slab_xy;
+        const std::size_t ny_i0 = rem / nodes_x_;
+        const std::size_t nx_i0 = rem % nodes_x_;
+
+        // Sanity check: static_cast has defined bevahior
+        assert(nx_i0 < max_int);
+        assert(ny_i0 < max_int);
+        assert(nz_i0 < max_int);
+
+        // Avoid repeated casts
+        const int nx_i0_int = static_cast<int>(nx_i0);
+        const int ny_i0_int = static_cast<int>(ny_i0);
+        const int nz_i0_int = static_cast<int>(nz_i0);
+
+        // Track minimum for valid global element id
+        std::size_t g_eid_min = std::numeric_limits<std::size_t>::max();
+
+        // Loop possible elements for each node
+        for (int e = 0; e < 8; ++e) {
+            // Set element index in each direction
+            const int nx_i = nx_i0_int + offset[3 * e + 0];
+            const int ny_i = ny_i0_int + offset[3 * e + 1];
+            const int nz_i = nz_i0_int + offset[3 * e + 2];
+
+            // Check if element indices are valid
+            if (nx_i < 0 || nx_i >= nx_int || ny_i < 0 || ny_i >= ny_int ||
+                nz_i < 0 || nz_i >= nz_int) {
+                // Skip to next element
+                continue;
+            }
+
+            // Compute global element id
+            const std::size_t g_eid = nx_i + (nx_ * ny_i) + (nx_ * ny_ * nz_i);
+
+            // Sanity check: global element id is within bounds
+            assert(g_eid < num_elem_);
+
+            // Update minimum valid global element id
+            g_eid_min = std::min(g_eid_min, g_eid);
+
+            // Early exit
+            if (g_eid_min == 0) {
+                break;
+            }
+        }
+
+        // Sanity check: node is connected to at least one valid element
+        assert(g_eid_min < std::numeric_limits<std::size_t>::max());
+
+        // Is the smallest global element id part of the global-to-local map
+        const auto it = elem_id_local_.find(g_eid_min);
+        if (it == elem_id_local_.end()) {
+            // Skip to next local node id
+            continue;
+        }
+
+        // Is the smallest global a partition or ghost element
+        if (it->second >= num_elem_partition_) {
+            // Skip to next local node id
+            continue;
+        }
+
+        // Set ownership to true
+        nodal_ownership_[l_nid] = 1;
+    }
+
+}  // Mesh::SetNodalOwnership_
+
+// ----------------------------------------------------------------------------
 // Set nodal coordinates
 // ----------------------------------------------------------------------------
 void Mesh::SetNodalCoordinates_() {
@@ -867,12 +984,12 @@ void Mesh::SetNodalCoordinates_() {
     const std::array<double, 24> offset{
         0.,  0.,  0.,   // node 0
         dx_, 0.,  0.,   // node 1
-        dx_, dy_, 0.,   // node 2
-        0.,  dy_, 0.,   // node 3
+        0.,  dy_, 0.,   // node 2
+        dx_, dy_, 0.,   // node 3
         0.,  0.,  dz_,  // node 4
         dx_, 0.,  dz_,  // node 5
-        dx_, dy_, dz_,  // node 6
-        0.,  dy_, dz_,  // node 7
+        0.,  dy_, dz_,  // node 6
+        dx_, dy_, dz_,  // node 7
     };
 
     // Track which nodes have already been set

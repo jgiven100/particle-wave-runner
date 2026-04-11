@@ -11,6 +11,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <fstream>
@@ -71,6 +72,9 @@ void VTKWriterMesh::InitializeWriter_() {
     // Set the number of elements
     const std::size_t num_elem_total = mesh_->GetNumElemTotal();
 
+    // Map for right-hand rule ordring (gmsh and vtk)
+    std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
+
     // Sanity check: connectivity array has 8 nodes per element
     assert(conn.size() == 8 * num_elem_total);
 
@@ -86,7 +90,8 @@ void VTKWriterMesh::InitializeWriter_() {
 
         // Loop nodes per elements
         for (int n = 0; n < 8; ++n) {
-            hex->GetPointIds()->SetId(n, conn[8 * e + n]);
+            const int index = vtk_ordering[n];
+            hex->GetPointIds()->SetId(n, conn[8 * e + index]);
         }
 
         // Add hex element to grid

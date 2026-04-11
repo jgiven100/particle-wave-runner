@@ -34,6 +34,9 @@ class MeshBase {
     // Get local element-wise connectivity
     virtual const std::vector<std::size_t>& GetElemConnLocal() const = 0;
 
+    // Get nodal ownership
+    virtual const std::vector<char>& GetNodalOwnership() const = 0;
+
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;
 };

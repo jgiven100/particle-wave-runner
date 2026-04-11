@@ -98,6 +98,12 @@ class Mesh : public MeshBase {
         return conn_local_;
     }
 
+    // Get nodal ownership
+    const std::vector<char>& GetNodalOwnership() const override {
+        assert(setup_complete_);
+        return nodal_ownership_;
+    }
+
     // Get nodal coordinates
     const std::vector<double>& GetNodalCoordinates() const override {
         assert(setup_complete_);
@@ -144,6 +150,7 @@ class Mesh : public MeshBase {
     // Connect mesh
     // Calls:
     //   SetElementsConnectivity_()
+    //   SetNodalOwnership_()
     //   SetNodalCoordinates_()
     // ------------------------------------------------------------------------
     void ConnectMesh_();
@@ -201,6 +208,12 @@ class Mesh : public MeshBase {
     // partition and ghost elements
     // ------------------------------------------------------------------------
     void SetElementsConnectivity_();
+
+    // ------------------------------------------------------------------------
+    // Set nodal ownership
+    // Determines which active nodes are owned by this process
+    // ------------------------------------------------------------------------
+    void SetNodalOwnership_();
 
     // ------------------------------------------------------------------------
     // Set nodal coordinates
@@ -335,9 +348,9 @@ class Mesh : public MeshBase {
     // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
 
     // Element local-to-global id vector
-    // Size is number of partition + ghost elements (num_elem_total_)
-    // Index is local element id
-    // Value is global element id
+    // Size: number of partition + ghost elements (num_elem_total_)
+    // Index: local element id
+    // Value: global element id
     std::vector<std::size_t> elem_id_global_;
 
     // Element global-to-local id map
@@ -367,11 +380,21 @@ class Mesh : public MeshBase {
     // Flat convention: [e0n0,e0n1,...,e0n7,e1n0,e1n1,...,e1n7,...]
     std::vector<std::size_t> conn_local_;
 
+    // Nodal local-to-global id vector
+    // Size: number of active nodes (num_nodes_active_)
+    // Index: local node id
+    // Value: global node id
+    std::vector<std::size_t> nodal_id_global_;
+
     // Nodal global-to-local id map
     // Size: number of active nodes (num_nodes_active_)
     // Key: global node id
     // Value: local node id
     std::unordered_map<std::size_t, std::size_t> nodal_id_local_;
+
+    // Nodal ownership
+    // Size: number of active nodes (num_nodes_active_)
+    std::vector<char> nodal_ownership_;
 
     // Nodal coordinates using local node indexing
     // Size: (3 * num_nodes_active_)

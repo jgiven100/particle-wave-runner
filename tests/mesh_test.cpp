@@ -434,6 +434,52 @@ TEST_CASE("Mesh", "[mesh]") {
     }  // Global element connectivity
 
     // ------------------------------------------------------------------------
+    // Nodal ownership
+    // ------------------------------------------------------------------------
+    {
+        INFO("Nodal ownership");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Set total nodes (all partitions)
+        const std::size_t total_nodes = (nx + 1) * (ny + 1) * (nz + 1);
+
+        // Loop each 3x3x3 mesh
+        for (const auto &mesh : meshes) {
+            // Grab nodal ownership
+            const auto &owned = mesh->GetNodalOwnership();
+
+            // Count owned on this partition
+            const std::size_t owned_local =
+                std::count(owned.begin(), owned.end(), 1);
+
+            // Reduce number of owned
+            const std::size_t owned_global =
+                pwr::MPIUtilities::AllReduceSum(owned_local);
+
+            // -- Check if sum of owned matches number active nodes -----------
+            if (owned_global != total_nodes) {
+                num_failed_tests_local++;
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Nodal ownership
+
+    // ------------------------------------------------------------------------
     // Nodal coordinates
     // ------------------------------------------------------------------------
     {
@@ -525,13 +571,13 @@ TEST_CASE("Mesh", "[mesh]") {
                 const double z0 = coords[3 * n0 + 2];
 
                 // Grab far corner
-                const std::size_t n6 = conn[8 * e + 6];
-                const double x6 = coords[3 * n6 + 0];
-                const double y6 = coords[3 * n6 + 1];
-                const double z6 = coords[3 * n6 + 2];
+                const std::size_t n7 = conn[8 * e + 7];
+                const double x7 = coords[3 * n7 + 0];
+                const double y7 = coords[3 * n7 + 1];
+                const double z7 = coords[3 * n7 + 2];
 
                 // Compute volume
-                const double dvol = (x6 - x0) * (y6 - y0) * (z6 - z0);
+                const double dvol = (x7 - x0) * (y7 - y0) * (z7 - z0);
 
                 // -- Check if volume is close --------------------------------
                 if (std::fabs(dvol - elem_vol) > 1.e-12) {
