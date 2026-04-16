@@ -1,5 +1,5 @@
-#ifndef VTK_WRITER_MESH_H
-#define VTK_WRITER_MESH_H
+#ifndef VTK_WRITER_FIELD_H
+#define VTK_WRITER_FIELD_H
 
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
@@ -7,27 +7,27 @@
 
 #include <cassert>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "utilities.h"
+#include "field.h"
+#include "mesh.h"
 #include "vtk_writer_base.h"
 
 namespace pwr {
 
 // Forward declare MeshBase
 // This is sufficient since the header only stores a pointer-like object
-// and not the complete type
+// and the complete type
 class MeshBase;
 
-// vtk writer class for mesh
-class VTKWriterMesh : public VTKWriterBase {
+// vtk writer class for field
+class VTKWriterField : public VTKWriterBase {
    public:
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const std::shared_ptr<const pwr::MeshBase>& mesh)
+    VTKWriterField(const std::shared_ptr<const pwr::MeshBase>& mesh)
         : mesh_(mesh) {
         // Sanity check: pointer to mesh is not null
         assert(mesh_);
@@ -38,27 +38,26 @@ class VTKWriterMesh : public VTKWriterBase {
     // ------------------------------------------------------------------------
     // Destructor
     // ------------------------------------------------------------------------
-    ~VTKWriterMesh() override = default;
+    ~VTKWriterField() override = default;
 
     // ------------------------------------------------------------------------
     // Delete copy constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const VTKWriterMesh&) = delete;
+    VTKWriterField(const VTKWriterField&) = delete;
 
     // ------------------------------------------------------------------------
     // Delete copy assignment
     // ------------------------------------------------------------------------
-    VTKWriterMesh& operator=(const VTKWriterMesh&) = delete;
+    VTKWriterField& operator=(const VTKWriterField&) = delete;
 
     // ------------------------------------------------------------------------
     // Add field
     // ------------------------------------------------------------------------
-    void AddField(const std::shared_ptr<pwr::Field>& /*field*/,
-                  const std::string& /*field_name*/) override {
+    void AddField(const std::shared_ptr<pwr::Field>& field,
+                  const std::string& field_name) override {
         assert(setup_complete_);
-        std::stringstream error_message;
-        error_message << "`AddField` not support for VTKWriterMesh class.";
-        pwr::Utilities::PrintErrorOnRoot(error_message.str());
+        fields_.emplace_back(field);
+        fields_names_.emplace_back(field_name);
     }
 
     // ------------------------------------------------------------------------
@@ -81,7 +80,7 @@ class VTKWriterMesh : public VTKWriterBase {
 
    private:
     // ------------------------------------------------------------------------
-    // Setup vtk writer for mesh
+    // Setup vtk writer for field
     // Calls:
     //   InitializeWriter_()
     //   CheckSetup_()
@@ -89,7 +88,7 @@ class VTKWriterMesh : public VTKWriterBase {
     void Setup_();
 
     // ------------------------------------------------------------------------
-    // Initialize vtk writer for mesh
+    // Initialize vtk writer for field
     // ------------------------------------------------------------------------
     void InitializeWriter_();
 
@@ -105,7 +104,7 @@ class VTKWriterMesh : public VTKWriterBase {
     void Write_(const std::string& filename) const;
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
+    // Write parallel output files
     // ------------------------------------------------------------------------
     void WriteParallel_(const std::string& filename,
                         const std::vector<std::string>& piece_filenames) const;
@@ -116,6 +115,12 @@ class VTKWriterMesh : public VTKWriterBase {
     // Shared pointer to mesh object
     const std::shared_ptr<const pwr::MeshBase> mesh_;
 
+    // Container to hold shared pointer to field objects
+    std::vector<std::shared_ptr<pwr::Field>> fields_;
+
+    // Container to hold name for each field
+    std::vector<std::string> fields_names_;
+
     // Smart vtk pointer to points
     vtkSmartPointer<vtkPoints> points_;
 
@@ -125,4 +130,4 @@ class VTKWriterMesh : public VTKWriterBase {
 
 }  // namespace pwr
 
-#endif  // VTK_WRITER_MESH_H
+#endif  // VTK_WRITER_FIELD_H

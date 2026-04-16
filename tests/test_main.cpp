@@ -14,9 +14,10 @@ int main(int argc, char **argv) {
 
     // Number of MPI processes must be less than 5
     if (pwr::MPIUtilities::Size() > 4) {
-        std::stringstream oss;
-        oss << "Too many MPI processes (>4) for `./particle_wave_runner_test`.";
-        pwr::Utilities::PrintErrorOnRoot(oss.str());
+        std::stringstream error_message;
+        error_message
+            << "Too many MPI processes (>4) for `./particle_wave_runner_test`.";
+        pwr::Utilities::PrintErrorOnRoot(error_message.str());
 
         return -1;
     }
@@ -36,9 +37,9 @@ int main(int argc, char **argv) {
     }
 
     if (!has_tag) {
-        std::stringstream oss;
-        oss << "No tag provided with `./particle_wave_runner_test`.";
-        pwr::Utilities::PrintErrorOnRoot(oss.str());
+        std::stringstream error_message;
+        error_message << "No tag provided with `./particle_wave_runner_test`.";
+        pwr::Utilities::PrintErrorOnRoot(error_message.str());
 
         return -1;
     }

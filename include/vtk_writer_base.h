@@ -6,10 +6,19 @@
 
 namespace pwr {
 
+// Foward declare Field
+// This is sufficient since the header only stores a pointer-like object
+// and not the complete type
+class Field;
+
 // VTK writer base class
 class VTKWriterBase {
    public:
     virtual ~VTKWriterBase() = default;
+
+    // Add field
+    virtual void AddField(const std::shared_ptr<pwr::Field>& field,
+                          const std::string& field_name) = 0;
 
     // Write output file
     virtual void Write(const std::string& filename) const = 0;

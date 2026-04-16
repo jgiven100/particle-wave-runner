@@ -74,6 +74,7 @@ add_library(pwr_core
     src/output_manager.cpp
     src/solver_explicit.cpp
     src/solver_implicit.cpp
+    src/vtk_writer_field.cpp
     src/vtk_writer_mesh.cpp
 )
 

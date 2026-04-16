@@ -8,6 +8,7 @@
 
 #include "mpi_utilities.h"
 #include "utilities.h"
+#include "vtk_writer_field.h"
 #include "vtk_writer_mesh.h"
 
 namespace pwr {
@@ -17,6 +18,7 @@ namespace pwr {
 // ----------------------------------------------------------------------------
 void OutputManager::Setup_() {
     InitializeOutputManager_();
+    InitializeFieldWriter_();
     InitializeMeshWriter_();
     InitializeParticleWriter_();
     CheckSetup_();
@@ -65,6 +67,18 @@ void OutputManager::InitializeOutputManager_() {
 }  // OutputManager::InitializeOutputManager_
 
 // ----------------------------------------------------------------------------
+// Initialize VTK writer for field
+// ----------------------------------------------------------------------------
+void OutputManager::InitializeFieldWriter_() {
+    // Shared pointer to vtk writer object for field
+    vtk_writer_field_ = std::make_shared<VTKWriterField>(mesh_);
+
+    // Sanity check: point to vtk wrtier is not null
+    assert(vtk_writer_field_);
+
+}  // OutputManager::InitializeFieldWriter_
+
+// ----------------------------------------------------------------------------
 // Initialize VTK writer for mesh
 // ----------------------------------------------------------------------------
 void OutputManager::InitializeMeshWriter_() {
@@ -94,12 +108,57 @@ void OutputManager::CheckSetup_() {
 }  // OutputManager::CheckSetup_
 
 // ----------------------------------------------------------------------------
+// Write output files for field
+// ----------------------------------------------------------------------------
+void OutputManager::WriteFieldFiles_(const int step) {
+    // String padding for step
+    std::string step_str = std::to_string(step);
+    Utilities::PadString(step_str, step_padding_);
+
+    // String padding for rank
+    std::string rank_str = std::to_string(rank_);
+    Utilities::PadString(rank_str, rank_padding_);
+
+    // Output filename
+    const std::string filename_vtu =
+        output_dir_name_ + "field_step" + step_str + "_" + rank_str + ".vtu";
+
+    // Write file
+    vtk_writer_field_->Write(filename_vtu);
+
+    // Ensure each `.vtu` is written before `.pvtu` is written
+    MPIUtilities::Barrier();
+
+    // Only write ptvu on root
+    if (rank_ == 0) {
+        // Output filename
+        const std::string filename_pvtu =
+            output_dir_name_ + "field_step" + step_str + ".pvtu";
+
+        // Place to hold each rank's filename
+        std::vector<std::string> piece_filenames;
+
+        // Loop each rank and save file name
+        for (int r = 0; r < size_; ++r) {
+            // String padding for rank
+            std::string r_str = std::to_string(r);
+            Utilities::PadString(r_str, rank_padding_);
+
+            // Save name
+            piece_filenames.push_back("field_step" + step_str + "_" + r_str +
+                                      ".vtu");
+        }
+
+        // Write parallel file
+        vtk_writer_field_->WriteParallel(filename_pvtu, piece_filenames);
+    }
+
+}  // OutputManager::WriteFieldFiles_
+
+// ----------------------------------------------------------------------------
 // Write output files for mesh
 // ----------------------------------------------------------------------------
-void OutputManager::WriteMeshFiles_() {
-    // TODO pass `step` as function input later
-    int step = 0;
-
+void OutputManager::WriteMeshFiles_(const int step) {
     // String padding for step
     std::string step_str = std::to_string(step);
     Utilities::PadString(step_str, step_padding_);
@@ -147,7 +206,7 @@ void OutputManager::WriteMeshFiles_() {
 // ----------------------------------------------------------------------------
 // Write output files for particles
 // ----------------------------------------------------------------------------
-void OutputManager::WriteParticleFiles_() {
+void OutputManager::WriteParticleFiles_(const int /*step*/) {
     ;  // TODO
 
 }  // OutputManager::WriteParticleFiles_

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "field.h"
 #include "mesh.h"
 #include "mesh_base.h"
 #include "mpi_environment.h"
@@ -41,6 +42,16 @@ int main(int argc, char **argv) {
                                           z_max, nx, ny, nz);
 
     // ------------------------------------------------------------------------
+    // Set field
+    // ------------------------------------------------------------------------
+    const std::shared_ptr<pwr::Field> field =
+        std::make_shared<pwr::Field>(mesh->GetNumNodesActive());
+
+    for (std::size_t i = 0; i < field->GetFieldSize(); ++i) {
+        (*field)[i] = rank;
+    }
+
+    // ------------------------------------------------------------------------
     // Set operator (physics engine)
     // ------------------------------------------------------------------------
 
@@ -65,12 +76,18 @@ int main(int argc, char **argv) {
     // ------------------------------------------------------------------------
     // Create output manager
     // ------------------------------------------------------------------------
+    const std::size_t step = 0;
     const std::size_t max_step = 100;  // To testing padding
 
     const std::shared_ptr<pwr::OutputManager> output_manager =
         std::make_shared<pwr::OutputManager>(mesh, max_step);
 
-    output_manager->WriteMeshFiles();
+    output_manager->AddField(field, "Field_0");
+    output_manager->AddField(field, "Field_1");
+
+    output_manager->WriteMeshFiles(step);
+
+    output_manager->WriteFieldFiles(step);
 
     // ------------------------------------------------------------------------
     // Done

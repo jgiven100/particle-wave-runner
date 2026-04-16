@@ -778,7 +778,7 @@ void Mesh::SetElementsConnectivity_() {
         conn_global_[8 * e + 6] = n6;
         conn_global_[8 * e + 7] = n7;
 
-        // Update set of active gloabl node ids
+        // Update set of active global node ids
         active_nodes.insert(n0);
         active_nodes.insert(n1);
         active_nodes.insert(n2);
@@ -798,7 +798,7 @@ void Mesh::SetElementsConnectivity_() {
     // Sanity check: active nodes are less than or equal to total nodes
     assert(num_nodes_active_ <= num_nodes_);
 
-    // Sort set of active nodes for consistent gloabl-to-local map
+    // Sort set of active nodes for consistent global-to-local map
     nodal_id_global_.assign(active_nodes.begin(), active_nodes.end());
     std::sort(nodal_id_global_.begin(), nodal_id_global_.end());
 

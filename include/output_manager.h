@@ -1,12 +1,14 @@
 #ifndef PWR_OUTPUT_MANAGER_H
 #define PWR_OUTPUT_MANAGER_H
 
-#include <vtk_writer_base.h>
-
 #include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
+
+#include "field.h"
+#include "mesh_base.h"
+#include "vtk_writer_base.h"
 
 namespace pwr {
 
@@ -52,25 +54,44 @@ class OutputManager {
     OutputManager& operator=(const OutputManager&) = delete;
 
     // ------------------------------------------------------------------------
+    // Add field
+    // ------------------------------------------------------------------------
+    void AddField(const std::shared_ptr<pwr::Field>& field,
+                  const std::string& field_name) {
+        assert(setup_complete_);
+        vtk_writer_field_->AddField(field, field_name);
+    }
+
+    // ------------------------------------------------------------------------
+    // Write field files
+    // ------------------------------------------------------------------------
+    void WriteFieldFiles(const int step) {
+        assert(setup_complete_);
+        WriteFieldFiles_(step);
+    }
+
+    // ------------------------------------------------------------------------
     // Write mesh files
     // ------------------------------------------------------------------------
-    void WriteMeshFiles() {
+    void WriteMeshFiles(const int step) {
         assert(setup_complete_);
-        WriteMeshFiles_();
+        WriteMeshFiles_(step);
     }
 
     // ------------------------------------------------------------------------
     // Write particle files
     // ------------------------------------------------------------------------
-    void WriteParticleFiles() {
+    void WriteParticleFiles(const int step) {
         assert(setup_complete_);
-        WriteParticleFiles_();
+        WriteParticleFiles_(step);
     }
 
    private:
     // ------------------------------------------------------------------------
     // Setup output manager
     // Calls:
+    //   InitializeOutputManager_();
+    //   InitializeFieldWriter_();
     //   InitializeMeshWriter_()
     //   InitializeParticleWriter_()
     //   CheckSetup_()
@@ -81,6 +102,11 @@ class OutputManager {
     // Initialize output manager
     // ------------------------------------------------------------------------
     void InitializeOutputManager_();
+
+    // ------------------------------------------------------------------------
+    // Initialize field writer
+    // ------------------------------------------------------------------------
+    void InitializeFieldWriter_();
 
     // ------------------------------------------------------------------------
     // Initialize mesh writer
@@ -99,20 +125,28 @@ class OutputManager {
     void CheckSetup_();
 
     // ------------------------------------------------------------------------
+    // Write field files
+    // ------------------------------------------------------------------------
+    void WriteFieldFiles_(int step);
+
+    // ------------------------------------------------------------------------
     // Write mesh files
     // ------------------------------------------------------------------------
-    void WriteMeshFiles_();
+    void WriteMeshFiles_(int step);
 
     // ------------------------------------------------------------------------
     // Write particle files
-    // -----------------------------------------------------------------------
-    void WriteParticleFiles_();
+    // ------------------------------------------------------------------------
+    void WriteParticleFiles_(int step);
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
 
     // Shared pointer to mesh object
     const std::shared_ptr<const pwr::MeshBase> mesh_;
+
+    // Shared pointer to vtk writer object for field
+    std::shared_ptr<pwr::VTKWriterBase> vtk_writer_field_;
 
     // Shared pointer to vtk writer object for mesh
     std::shared_ptr<const pwr::VTKWriterBase> vtk_writer_mesh_;
