@@ -66,22 +66,26 @@ void VTKWriterField::InitializeWriter_() {
     // Grab mesh connectivity
     const auto &conn = mesh_->GetElemConnLocal();
 
+    // Sanity check: connectivity array has 8 nodes per element
+    assert(conn.size() % 8 == 0);
+
     // Set the number of elements
-    const std::size_t num_elem_total = mesh_->GetNumElemTotal();
+    const std::size_t num_elem_partition = mesh_->GetNumElemPartition();
 
     // Map for right-hand rule ordering (gmsh and vtk)
     std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
 
-    // Sanity check: connectivity array has 8 nodes per element
-    assert(conn.size() == 8 * num_elem_total);
+    // Sanity check: connectivity array has enough nodes for the partition
+    // elements (could be more due to ghost elements)
+    assert(conn.size() >= 8 * num_elem_partition);
 
     // Create vtk grid object
     grid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
-    grid_->Allocate(num_elem_total);
+    grid_->Allocate(num_elem_partition);
     grid_->SetPoints(points_);
 
-    // Loop partition and ghost elements
-    for (std::size_t e = 0; e < num_elem_total; ++e) {
+    // Loop partition elements
+    for (std::size_t e = 0; e < num_elem_partition; ++e) {
         // Create vtk hexahedron object
         auto hex = vtkSmartPointer<vtkHexahedron>::New();
 
@@ -186,8 +190,9 @@ void VTKWriterField::WriteParallel_(
     // Start PUnstructuredGrid
     out << R"(  <PUnstructuredGrid>)" << "\n";
 
-    // "Float64" for vtkFloatArray
-    const char *pointType = "Float64";
+    // Default type for vtkSmartPointer<vtkPoints>::New() is VTK_FLOAT; can
+    // check using vtk::Points::GetDataType() and definitions in vtkSetGet.h
+    const char *pointType = "Float32";
 
     // PPoints declaration (must match the Points in each .vtu)
     out << R"(    <PPoints>)" << "\n";
@@ -195,11 +200,14 @@ void VTKWriterField::WriteParallel_(
         << "\" NumberOfComponents=\"3\" Name=\"Points\"/>\n";
     out << R"(    </PPoints>)" << "\n";
 
+    // "Float64" for vtkDoubleArray
+    const char *fieldType = "Float64";
+
     // PPointData: declare the field arrays written in Wrtie_
     out << R"(    <PPointData>)" << "\n";
 
     for (const auto &field_name : fields_names_) {
-        out << "      <PDataArray type=\"" << pointType
+        out << "      <PDataArray type=\"" << fieldType
             << "\" NumberOfComponents=\"1\" Name=\"" << field_name << "\"/>\n";
     }
 
