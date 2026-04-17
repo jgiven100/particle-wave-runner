@@ -11,6 +11,7 @@ list(APPEND CMAKE_PREFIX_PATH "$ENV{HOME}/Catch2-3.13.0/install")
 
 # Create the main test executable
 add_executable(particle_wave_runner_tests
+    field_test.cpp
     test_main.cpp
     mesh_test.cpp
     mpi_utilities_test.cpp

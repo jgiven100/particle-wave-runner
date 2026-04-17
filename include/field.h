@@ -40,16 +40,16 @@ class Field {
     // Getters
     // ------------------------------------------------------------------------
 
-    // Get field size
-    std::size_t GetFieldSize() const {
-        assert(setup_complete_);
-        return field_.size();
-    }
-
     // Get field
     const std::vector<double>& GetField() const {
         assert(setup_complete_);
         return field_;
+    }
+
+    // Get field size
+    std::size_t GetFieldSize() const {
+        assert(setup_complete_);
+        return field_.size();
     }
 
    private:

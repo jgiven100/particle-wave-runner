@@ -129,5 +129,5 @@ mpirun -n <N> ./particle_wave_runner_tests "[tag]"
 where `<N>` is the number of MPI processes (up to `-n 4`)
 
 Must include `"[tag]"`. Currently available tags include:
-`"[mesh]"`, `"[mpi]"`
+`"[mesh]"`, `"[mpi]"`, `"[field]"`
 
