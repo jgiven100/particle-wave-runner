@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <memory>
+#include <source_location>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -57,7 +58,8 @@ class VTKWriterMesh : public VTKWriterBase {
                   const std::string& /*field_name*/) override {
         assert(setup_complete_);
         std::stringstream error_message;
-        error_message << "`AddField` not support for VTKWriterMesh class.";
+        error_message << "`AddField` not supported in "
+                      << std::source_location::current().function_name();
         pwr::Utilities::PrintErrorOnRoot(error_message.str());
     }
 

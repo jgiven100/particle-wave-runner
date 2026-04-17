@@ -13,6 +13,7 @@
 #include "solver_base.h"
 #include "solver_explicit.h"
 #include "solver_implicit.h"
+#include "utilities.h"
 #include "vtk_writer_base.h"
 #include "vtk_writer_mesh.h"
 
@@ -33,22 +34,27 @@ int main(int argc, char **argv) {
     const double x_max = 1.;
     const double y_max = 1.;
     const double z_max = 1.;
-    const std::size_t nx = 3;
-    const std::size_t ny = 3;
-    const std::size_t nz = 3;
+    const std::size_t nx = 16;
+    const std::size_t ny = 16;
+    const std::size_t nz = 16;
 
     const std::shared_ptr<const pwr::MeshBase> mesh =
         std::make_shared<const pwr::Mesh>(x_min, y_min, z_min, x_max, y_max,
                                           z_max, nx, ny, nz);
 
     // ------------------------------------------------------------------------
-    // Set field
+    // Set fields
     // ------------------------------------------------------------------------
-    const std::shared_ptr<pwr::Field> field =
+    const std::shared_ptr<pwr::Field> field_rank =
         std::make_shared<pwr::Field>(mesh->GetNumNodesActive());
 
-    for (std::size_t i = 0; i < field->GetFieldSize(); ++i) {
-        (*field)[i] = rank;
+    const std::shared_ptr<pwr::Field> field_owned =
+        std::make_shared<pwr::Field>(mesh->GetNumNodesActive());
+    const auto &nodal_ownership = mesh->GetNodalOwnership();
+
+    for (std::size_t i = 0; i < field_rank->GetFieldSize(); ++i) {
+        (*field_rank)[i] = rank;
+        (*field_owned)[i] = nodal_ownership[i];
     }
 
     // ------------------------------------------------------------------------
@@ -82,8 +88,8 @@ int main(int argc, char **argv) {
     const std::shared_ptr<pwr::OutputManager> output_manager =
         std::make_shared<pwr::OutputManager>(mesh, max_step);
 
-    output_manager->AddField(field, "Field_0");
-    output_manager->AddField(field, "Field_1");
+    output_manager->AddField(field_rank, "rank");
+    output_manager->AddField(field_owned, "owned");
 
     output_manager->WriteMeshFiles(step);
 

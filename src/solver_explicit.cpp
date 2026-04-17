@@ -1,7 +1,5 @@
 #include "solver_explicit.h"
 
-#include <iostream>  // TODO remove me
-
 namespace pwr {
 
 // ----------------------------------------------------------------------------
@@ -26,8 +24,7 @@ void SolverExplicit::CheckSetup_() {
 // Step
 // ----------------------------------------------------------------------------
 void SolverExplicit::Step_() {
-    // TODO
-    std::cout << "Inside SolverExplicit::Step_() " << std::endl;
+    ;  // TODO
 
 }  // SolverExplicit::Step_
 

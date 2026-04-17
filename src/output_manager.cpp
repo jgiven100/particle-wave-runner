@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <iostream>  // TODO remove after refactor
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "mpi_utilities.h"
@@ -51,8 +51,9 @@ void OutputManager::InitializeOutputManager_() {
         }
 
         // Say where the output directory is located
-        // TODO move CLI message to utilities.h later
-        std::cout << "Output files are saved at: " << output_dir << std::endl;
+        std::stringstream info_message;
+        info_message << "Output files are save at: " << output_dir;
+        Utilities::PrintInfoOnRoot(info_message.str());
     }
 
     // Ensure `output/` directory exists on all ranks before proceeding
@@ -136,7 +137,7 @@ void OutputManager::WriteFieldFiles_(const int step) {
             output_dir_name_ + "field_step" + step_str + ".pvtu";
 
         // Place to hold each rank's filename
-        std::vector<std::string> piece_filenames;
+        std::vector<std::string> piece_filenames(size_);
 
         // Loop each rank and save file name
         for (int r = 0; r < size_; ++r) {
@@ -145,8 +146,7 @@ void OutputManager::WriteFieldFiles_(const int step) {
             Utilities::PadString(r_str, rank_padding_);
 
             // Save name
-            piece_filenames.push_back("field_step" + step_str + "_" + r_str +
-                                      ".vtu");
+            piece_filenames[r] = "field_step" + step_str + "_" + r_str + ".vtu";
         }
 
         // Write parallel file
@@ -184,7 +184,7 @@ void OutputManager::WriteMeshFiles_(const int step) {
             output_dir_name_ + "mesh_step" + step_str + ".pvtu";
 
         // Place to hold each rank's filename
-        std::vector<std::string> piece_filenames;
+        std::vector<std::string> piece_filenames(size_);
 
         // Loop each rank and save file name
         for (int r = 0; r < size_; ++r) {
@@ -193,8 +193,7 @@ void OutputManager::WriteMeshFiles_(const int step) {
             Utilities::PadString(r_str, rank_padding_);
 
             // Save name
-            piece_filenames.push_back("mesh_step" + step_str + "_" + r_str +
-                                      ".vtu");
+            piece_filenames[r] = "mesh_step" + step_str + "_" + r_str + ".vtu";
         }
 
         // Write parallel file

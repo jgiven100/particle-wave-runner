@@ -68,6 +68,28 @@ class Utilities {
         }
 
     }  // PrintErrorOnRoot
+
+    // ------------------------------------------------------------------------
+    // Print info on root
+    // ------------------------------------------------------------------------
+    static void PrintInfoOnRoot(const std::string &str, const int root = 0) {
+        // Only print on root (rank 0)
+        if (pwr::MPIUtilities::Rank() == root) {
+            std::cout << "\x1b[1;32m[INFO]\x1b[0m " << str << std::endl;
+        }
+
+    }  // PrintInfoOnRoot
+
+    // ------------------------------------------------------------------------
+    // Print warning on root
+    // ------------------------------------------------------------------------
+    static void PrintWarningOnRoot(const std::string &str, const int root = 0) {
+        // Only print on root (rank 0)
+        if (pwr::MPIUtilities::Rank() == root) {
+            std::cout << "\x1b[1;33m[WARNING]\x1b[0m " << str << std::endl;
+        }
+
+    }  // PrintWarningOnRoot
 };
 
 }  // namespace pwr

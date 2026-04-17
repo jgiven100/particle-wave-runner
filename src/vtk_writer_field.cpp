@@ -12,11 +12,14 @@
 #include <cassert>
 #include <cstddef>
 #include <fstream>
+#include <source_location>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "mesh_base.h"
 #include "mpi_utilities.h"
+#include "utilities.h"
 
 namespace pwr {
 
@@ -169,7 +172,15 @@ void VTKWriterField::Write_(const std::string &filename) const {
     writer->SetInputData(grid_);
 
     // Write
-    writer->Write();  // TODO add check: if (writer->Write == 0) { ERROR; }
+    const int error = writer->Write();
+
+    // Print error if write failed
+    if (error == 0) {
+        std::stringstream error_message;
+        error_message << "`writer->Write()` failed in "
+                      << std::source_location::current().function_name();
+        Utilities::PrintErrorOnRoot(error_message.str());
+    }
 
 }  // VTKWriterField::Write_
 
@@ -180,7 +191,15 @@ void VTKWriterField::WriteParallel_(
     const std::string &filename,
     const std::vector<std::string> &piece_filenames) const {
     // Open file
-    std::ofstream out(filename);  // TODO add check: if (!out) { ERROR; }
+    std::ofstream out(filename);
+
+    // Print error if open file failed
+    if (!out) {
+        std::stringstream error_message;
+        error_message << "`std::ofstream out(filename)` failed in "
+                      << std::source_location::current().function_name();
+        Utilities::PrintErrorOnRoot(error_message.str());
+    }
 
     // Header
     out << R"(<?xml version="1.0"?>)" << "\n";
