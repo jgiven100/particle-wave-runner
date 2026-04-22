@@ -247,7 +247,7 @@ TEST_CASE("Mesh", "[mesh]") {
             }
 
             // Create set of sets to store unique nodes for each element
-            std::set<std::set<size_t>> elems;
+            std::set<std::set<std::size_t>> elems;
 
             // Create map to count occurances for each face
             std::map<std::array<std::size_t, 4>, int> faces;
@@ -353,10 +353,10 @@ TEST_CASE("Mesh", "[mesh]") {
             }
 
             // Create set of sets to store unique nodes for each element
-            std::set<std::set<size_t>> elems;
+            std::set<std::set<std::size_t>> elems;
 
             // Create map to count occurances for each face
-            std::map<std::vector<std::size_t>, int> faces;
+            std::map<std::array<std::size_t, 4>, int> faces;
 
             // Loop elements
             for (std::size_t e = 0; e < num_elem_total; ++e) {
@@ -395,7 +395,7 @@ TEST_CASE("Mesh", "[mesh]") {
                         conn[8 * e + face_indices[4 * f + 2]];
                     const std::size_t n3 =
                         conn[8 * e + face_indices[4 * f + 3]];
-                    std::vector<std::size_t> face = {n0, n1, n2, n3};
+                    std::array<std::size_t, 4> face = {n0, n1, n2, n3};
                     std::sort(face.begin(), face.end());
 
                     // Find current face
