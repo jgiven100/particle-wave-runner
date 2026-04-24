@@ -37,9 +37,6 @@ class MeshBase {
     // Get nodal ownership
     virtual const std::vector<char>& GetNodalOwnership() const = 0;
 
-    // Get nodal ownership rank
-    virtual const std::vector<int>& GetNodalOwnershipRank() const = 0;
-
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;
 };

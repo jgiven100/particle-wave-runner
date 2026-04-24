@@ -72,6 +72,7 @@ add_library(pwr_core
     src/field.cpp
     src/mesh.cpp
     src/output_manager.cpp
+    src/particle_poisson.cpp
     src/solver_explicit.cpp
     src/solver_implicit.cpp
     src/vtk_writer_field.cpp

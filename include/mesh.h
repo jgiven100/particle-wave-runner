@@ -104,12 +104,6 @@ class Mesh : public MeshBase {
         return nodal_ownership_;
     }
 
-    // Get nodal ownership rank
-    const std::vector<int>& GetNodalOwnershipRank() const override {
-        assert(setup_complete_);
-        return nodal_ownership_rank_;
-    }
-
     // Get nodal coordinates
     const std::vector<double>& GetNodalCoordinates() const override {
         assert(setup_complete_);
@@ -218,7 +212,7 @@ class Mesh : public MeshBase {
 
     // ------------------------------------------------------------------------
     // Set nodal ownership rank
-    // Determine which rank owns each active node
+    // Determines which rank owns each active node
     // ------------------------------------------------------------------------
     void SetNodalOwnershipRank_();
 

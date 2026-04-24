@@ -10,6 +10,8 @@
 #include "mpi_environment.h"
 #include "mpi_utilities.h"
 #include "output_manager.h"
+#include "particle_base.h"
+#include "particle_poisson.h"
 #include "solver_base.h"
 #include "solver_explicit.h"
 #include "solver_implicit.h"
@@ -41,6 +43,12 @@ int main(int argc, char **argv) {
     const std::shared_ptr<const pwr::MeshBase> mesh =
         std::make_shared<const pwr::Mesh>(x_min, y_min, z_min, x_max, y_max,
                                           z_max, nx, ny, nz);
+
+    // ------------------------------------------------------------------------
+    // Set particles
+    // ------------------------------------------------------------------------
+    const std::shared_ptr<pwr::ParticleBase> particle =
+        std::make_shared<pwr::ParticlePoisson>();
 
     // ------------------------------------------------------------------------
     // Set fields
