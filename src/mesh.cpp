@@ -67,16 +67,13 @@ void Mesh::InitializeMesh_() {
 // ----------------------------------------------------------------------------
 void Mesh::PartitionMesh_() {
     // Set partitions
-    std::vector<std::size_t> partitions_start;
-    std::vector<std::size_t> partitions_size;
-    SetPartitionsPerDirection_(partitions_start, partitions_size);
+    SetPartitionsPerDirection_();
 
     // Set partitions ordering
-    std::vector<std::size_t> partitions_order;
-    SetPartitionsOrdering_(partitions_start, partitions_size, partitions_order);
+    SetPartitionsOrdering_();
 
     // Set number of elements (partition + ghost) for this partition
-    SetElementsNumbering_(partitions_start, partitions_size, partitions_order);
+    SetElementsNumbering_();
 
 }  // Mesh::PartitionMesh_
 
@@ -102,6 +99,9 @@ void Mesh::ConnectMesh_() {
     // Set nodal ownership
     SetNodalOwnership_();
 
+    // Set nodal ownership rank
+    SetNodalOwnershipRank_();
+
     // Set nodal coordinates
     SetNodalCoordinates_();
 
@@ -119,9 +119,7 @@ void Mesh::CheckSetup_() {
 // ----------------------------------------------------------------------------
 // Set partitions per direction
 // ----------------------------------------------------------------------------
-void Mesh::SetPartitionsPerDirection_(
-    std::vector<std::size_t> &partitions_start,
-    std::vector<std::size_t> &partitions_size) {
+void Mesh::SetPartitionsPerDirection_() {
     // Get size and rank
     const int size = pwr::MPIUtilities::Size();
     const int rank = pwr::MPIUtilities::Rank();
@@ -130,13 +128,13 @@ void Mesh::SetPartitionsPerDirection_(
     assert(size >= 0);
 
     // Resize and set zero
-    partitions_start.resize(3 * size, 0);
-    partitions_size.resize(3 * size, 0);
+    partitions_start_.resize(3 * size, 0);
+    partitions_size_.resize(3 * size, 0);
 
     // Start with one partition per direction
-    partitions_size[0] = nx_;
-    partitions_size[1] = ny_;
-    partitions_size[2] = nz_;
+    partitions_size_[0] = nx_;
+    partitions_size_[1] = ny_;
+    partitions_size_[2] = nz_;
 
     // Next unassigned index
     std::size_t n_index = 1;
@@ -150,9 +148,9 @@ void Mesh::SetPartitionsPerDirection_(
         // Loop blocks
         for (size_t i = 0; i < n_index; ++i) {
             // Set the number of elements per direction in the current block
-            const std::size_t nx_i = partitions_size[3 * i + 0];
-            const std::size_t ny_i = partitions_size[3 * i + 1];
-            const std::size_t nz_i = partitions_size[3 * i + 2];
+            const std::size_t nx_i = partitions_size_[3 * i + 0];
+            const std::size_t ny_i = partitions_size_[3 * i + 1];
+            const std::size_t nz_i = partitions_size_[3 * i + 2];
 
             // Total elements in the current block
             const std::size_t num_elements_i = nx_i * ny_i * nz_i;
@@ -165,9 +163,9 @@ void Mesh::SetPartitionsPerDirection_(
         }
 
         // Set elements in each direction
-        const std::size_t nx = partitions_size[3 * b_index + 0];
-        const std::size_t ny = partitions_size[3 * b_index + 1];
-        const std::size_t nz = partitions_size[3 * b_index + 2];
+        const std::size_t nx = partitions_size_[3 * b_index + 0];
+        const std::size_t ny = partitions_size_[3 * b_index + 1];
+        const std::size_t nz = partitions_size_[3 * b_index + 2];
 
         // Split in the x-direction
         if (nx >= ny && nx >= nz && nx > 1) {
@@ -179,20 +177,22 @@ void Mesh::SetPartitionsPerDirection_(
             assert(nx == left + right);
 
             // Update existing block in place with "left"
-            partitions_size[3 * b_index + 0] = left;
+            partitions_size_[3 * b_index + 0] = left;
 
             // Assign new block in next open position with "right"
-            partitions_size[3 * n_index + 0] = right;
-            partitions_size[3 * n_index + 1] = partitions_size[3 * b_index + 1];
-            partitions_size[3 * n_index + 2] = partitions_size[3 * b_index + 2];
+            partitions_size_[3 * n_index + 0] = right;
+            partitions_size_[3 * n_index + 1] =
+                partitions_size_[3 * b_index + 1];
+            partitions_size_[3 * n_index + 2] =
+                partitions_size_[3 * b_index + 2];
 
             // Assign starting index for new block
-            partitions_start[3 * n_index + 0] =
-                partitions_start[3 * b_index + 0] + left;
-            partitions_start[3 * n_index + 1] =
-                partitions_start[3 * b_index + 1];
-            partitions_start[3 * n_index + 2] =
-                partitions_start[3 * b_index + 2];
+            partitions_start_[3 * n_index + 0] =
+                partitions_start_[3 * b_index + 0] + left;
+            partitions_start_[3 * n_index + 1] =
+                partitions_start_[3 * b_index + 1];
+            partitions_start_[3 * n_index + 2] =
+                partitions_start_[3 * b_index + 2];
         }
 
         // Split in the y-direction
@@ -205,20 +205,22 @@ void Mesh::SetPartitionsPerDirection_(
             assert(ny == left + right);
 
             // Update existing block in place with "left"
-            partitions_size[3 * b_index + 1] = left;
+            partitions_size_[3 * b_index + 1] = left;
 
             // Assign new block in next open position with "right"
-            partitions_size[3 * n_index + 0] = partitions_size[3 * b_index + 0];
-            partitions_size[3 * n_index + 1] = right;
-            partitions_size[3 * n_index + 2] = partitions_size[3 * b_index + 2];
+            partitions_size_[3 * n_index + 0] =
+                partitions_size_[3 * b_index + 0];
+            partitions_size_[3 * n_index + 1] = right;
+            partitions_size_[3 * n_index + 2] =
+                partitions_size_[3 * b_index + 2];
 
             // Assign starting index for new block
-            partitions_start[3 * n_index + 0] =
-                partitions_start[3 * b_index + 0];
-            partitions_start[3 * n_index + 1] =
-                partitions_start[3 * b_index + 1] + left;
-            partitions_start[3 * n_index + 2] =
-                partitions_start[3 * b_index + 2];
+            partitions_start_[3 * n_index + 0] =
+                partitions_start_[3 * b_index + 0];
+            partitions_start_[3 * n_index + 1] =
+                partitions_start_[3 * b_index + 1] + left;
+            partitions_start_[3 * n_index + 2] =
+                partitions_start_[3 * b_index + 2];
         }
 
         // Split in the z-direction
@@ -231,20 +233,22 @@ void Mesh::SetPartitionsPerDirection_(
             assert(nz == left + right);
 
             // Update existing block in place with "left"
-            partitions_size[3 * b_index + 2] = left;
+            partitions_size_[3 * b_index + 2] = left;
 
             // Assign new block in next open position with "right"
-            partitions_size[3 * n_index + 0] = partitions_size[3 * b_index + 0];
-            partitions_size[3 * n_index + 1] = partitions_size[3 * b_index + 1];
-            partitions_size[3 * n_index + 2] = right;
+            partitions_size_[3 * n_index + 0] =
+                partitions_size_[3 * b_index + 0];
+            partitions_size_[3 * n_index + 1] =
+                partitions_size_[3 * b_index + 1];
+            partitions_size_[3 * n_index + 2] = right;
 
             // Assign starting index for new block
-            partitions_start[3 * n_index + 0] =
-                partitions_start[3 * b_index + 0];
-            partitions_start[3 * n_index + 1] =
-                partitions_start[3 * b_index + 1];
-            partitions_start[3 * n_index + 2] =
-                partitions_start[3 * b_index + 2] + left;
+            partitions_start_[3 * n_index + 0] =
+                partitions_start_[3 * b_index + 0];
+            partitions_start_[3 * n_index + 1] =
+                partitions_start_[3 * b_index + 1];
+            partitions_start_[3 * n_index + 2] =
+                partitions_start_[3 * b_index + 2] + left;
         }
 
         // Cannot split further
@@ -259,18 +263,18 @@ void Mesh::SetPartitionsPerDirection_(
     // Sanity check: sum of partition elements equals total elements
     std::size_t num_elem = 0;
     for (int i = 0; i < size; ++i) {
-        num_elem += partitions_size[3 * i + 0] * partitions_size[3 * i + 1] *
-                    partitions_size[3 * i + 2];
+        num_elem += partitions_size_[3 * i + 0] * partitions_size_[3 * i + 1] *
+                    partitions_size_[3 * i + 2];
     }
     assert(num_elem == num_elem_);
 
     // Sanity check: this block's range of element indices are less than or
     // equal to global elements per direction
-    assert(partitions_start[3 * rank + 0] + partitions_size[3 * rank + 0] <=
+    assert(partitions_start_[3 * rank + 0] + partitions_size_[3 * rank + 0] <=
            nx_);
-    assert(partitions_start[3 * rank + 1] + partitions_size[3 * rank + 1] <=
+    assert(partitions_start_[3 * rank + 1] + partitions_size_[3 * rank + 1] <=
            ny_);
-    assert(partitions_start[3 * rank + 2] + partitions_size[3 * rank + 2] <=
+    assert(partitions_start_[3 * rank + 2] + partitions_size_[3 * rank + 2] <=
            nz_);
 
 }  // Mesh::SetPartitionsPerDirection_
@@ -278,9 +282,7 @@ void Mesh::SetPartitionsPerDirection_(
 // ----------------------------------------------------------------------------
 // Set partitions ordering
 // ----------------------------------------------------------------------------
-void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
-                                  std::vector<std::size_t> &partitions_size,
-                                  std::vector<std::size_t> &partitions_order) {
+void Mesh::SetPartitionsOrdering_() {
     // Get size and rank
     const int size = pwr::MPIUtilities::Size();
     const int rank = pwr::MPIUtilities::Rank();
@@ -294,9 +296,9 @@ void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
     // Loop blocks
     for (int b = 0; b < size; ++b) {
         // Starting element index per direction
-        const std::size_t index_x_b_0 = partitions_start[3 * b + 0];
-        const std::size_t index_y_b_0 = partitions_start[3 * b + 1];
-        const std::size_t index_z_b_0 = partitions_start[3 * b + 2];
+        const std::size_t index_x_b_0 = partitions_start_[3 * b + 0];
+        const std::size_t index_y_b_0 = partitions_start_[3 * b + 1];
+        const std::size_t index_z_b_0 = partitions_start_[3 * b + 2];
 
         // Sanity check: starting index is less than global size
         // per direction
@@ -305,9 +307,9 @@ void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
         assert(index_z_b_0 < nz_);
 
         // Number of elements per direction
-        const std::size_t nx_b = partitions_size[3 * b + 0];
-        const std::size_t ny_b = partitions_size[3 * b + 1];
-        const std::size_t nz_b = partitions_size[3 * b + 2];
+        const std::size_t nx_b = partitions_size_[3 * b + 0];
+        const std::size_t ny_b = partitions_size_[3 * b + 1];
+        const std::size_t nz_b = partitions_size_[3 * b + 2];
 
         // Sanity check: size per direction is less than or equal
         // to global size per direction
@@ -340,15 +342,15 @@ void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
     assert(zc < max_size_t);
 
     // Resize
-    partitions_order.resize(size);
+    partitions_order_.resize(size);
 
     // Set initial ordering: (rank == order)
     for (int i = 0; i < size; ++i) {
-        partitions_order[i] = i;
+        partitions_order_[i] = i;
     }
 
-    // Sort `partitions_order` based on centroid coordinates
-    std::sort(partitions_order.begin(), partitions_order.end(),
+    // Sort `partitions_order_` based on centroid coordinates
+    std::sort(partitions_order_.begin(), partitions_order_.end(),
               [&](std::size_t a, std::size_t b) {
                   const std::size_t za = centroid_scaled_indices[3 * a + 2];
                   const std::size_t zb = centroid_scaled_indices[3 * b + 2];
@@ -372,16 +374,13 @@ void Mesh::SetPartitionsOrdering_(std::vector<std::size_t> &partitions_start,
 // ----------------------------------------------------------------------------
 // Set elements numbering
 // ----------------------------------------------------------------------------
-void Mesh::SetElementsNumbering_(
-    const std::vector<std::size_t> &partitions_start,
-    const std::vector<std::size_t> &partitions_size,
-    const std::vector<std::size_t> &partitions_order) {
+void Mesh::SetElementsNumbering_() {
     // Get rank and size
     const int rank = pwr::MPIUtilities::Rank();
     const int size = pwr::MPIUtilities::Size();
 
     // Set block index for this rank
-    const std::size_t block = partitions_order[rank];
+    const std::size_t block = partitions_order_[rank];
 
     // Sanity check: static_cast has defined behavior
     assert(size > 0);
@@ -390,9 +389,9 @@ void Mesh::SetElementsNumbering_(
     assert(block < static_cast<std::size_t>(size));
 
     // Set number of elements per direction in the partitions
-    nx_partition_ = partitions_size[3 * block + 0];
-    ny_partition_ = partitions_size[3 * block + 1];
-    nz_partition_ = partitions_size[3 * block + 2];
+    nx_partition_ = partitions_size_[3 * block + 0];
+    ny_partition_ = partitions_size_[3 * block + 1];
+    nz_partition_ = partitions_size_[3 * block + 2];
 
     // Sanity check: partition size per direction is less than or equal
     // to global size per direction
@@ -407,9 +406,9 @@ void Mesh::SetElementsNumbering_(
     assert(num_elem_partition_ > 0);
 
     // Set starting element index per direction in the partition
-    index_x_partition_0_ = partitions_start[3 * block + 0];
-    index_y_partition_0_ = partitions_start[3 * block + 1];
-    index_z_partition_0_ = partitions_start[3 * block + 2];
+    index_x_partition_0_ = partitions_start_[3 * block + 0];
+    index_y_partition_0_ = partitions_start_[3 * block + 1];
+    index_z_partition_0_ = partitions_start_[3 * block + 2];
 
     // Sanity check: partition starting index is less than global
     // size per direction
@@ -867,6 +866,7 @@ void Mesh::SetElementsConnectivity_() {
 void Mesh::SetNodalOwnership_() {
     // Resize based on number of active nodes
     nodal_ownership_.resize(num_nodes_active_, 0);
+    nodal_ownership_elem_.resize(num_nodes_active_, 0);
 
     // Create offset map
     const std::array<int, 24> offset{
@@ -953,6 +953,9 @@ void Mesh::SetNodalOwnership_() {
         // Sanity check: node is connected to at least one valid element
         assert(g_eid_min < std::numeric_limits<std::size_t>::max());
 
+        // Set ownership global element id
+        nodal_ownership_elem_[l_nid] = g_eid_min;
+
         // Is the smallest global element id part of the global-to-local map
         const auto it = elem_id_local_.find(g_eid_min);
         if (it == elem_id_local_.end()) {
@@ -971,6 +974,60 @@ void Mesh::SetNodalOwnership_() {
     }
 
 }  // Mesh::SetNodalOwnership_
+
+// ----------------------------------------------------------------------------
+// Set nodal ownership rank
+// ----------------------------------------------------------------------------
+void Mesh::SetNodalOwnershipRank_() {
+    // Get size
+    const int size = pwr::MPIUtilities::Size();
+
+    // Resize based on number of active nodes
+    nodal_ownership_rank_.resize(num_nodes_active_, 0);
+
+    // Set elements in the x-y plane
+    const std::size_t slab_xy = nx_ * ny_;
+
+    // Loop nodes
+    for (std::size_t l_nid = 0; l_nid < num_nodes_active_; ++l_nid) {
+        // Grab global element id
+        const std::size_t g_eid = nodal_ownership_elem_[l_nid];
+
+        // Compute element index in each direction for global element id
+        const std::size_t z_i = g_eid / slab_xy;
+        const std::size_t rem = g_eid % slab_xy;
+        const std::size_t y_i = rem / nx_;
+        const std::size_t x_i = rem % nx_;
+
+        // Loop blocks
+        for (int b = 0; b < size; ++b) {
+            // Starting element index per direction
+            const std::size_t index_x_b_0 = partitions_start_[3 * b + 0];
+            const std::size_t index_y_b_0 = partitions_start_[3 * b + 1];
+            const std::size_t index_z_b_0 = partitions_start_[3 * b + 2];
+
+            // Number of elements per direction
+            const std::size_t nx_b = partitions_size_[3 * b + 0];
+            const std::size_t ny_b = partitions_size_[3 * b + 1];
+            const std::size_t nz_b = partitions_size_[3 * b + 2];
+
+            // Is current element index within this block
+            if (index_x_b_0 <= x_i && x_i < (index_x_b_0 + nx_b) &&
+                index_y_b_0 <= y_i && y_i < (index_y_b_0 + ny_b) &&
+                index_z_b_0 <= z_i && z_i < (index_z_b_0 + nz_b)) {
+                // Set rank
+                nodal_ownership_rank_[l_nid] = partitions_order_[b];
+
+                // Early exit
+                break;
+            }
+
+            // Sanity check: element is found within a block
+            assert(b < (size - 1));
+        }
+    }
+
+}  // Mesh::SetNodalOwnershipRank_
 
 // ----------------------------------------------------------------------------
 // Set nodal coordinates

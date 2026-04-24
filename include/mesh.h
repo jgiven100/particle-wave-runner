@@ -104,6 +104,12 @@ class Mesh : public MeshBase {
         return nodal_ownership_;
     }
 
+    // Get nodal ownership rank
+    const std::vector<int>& GetNodalOwnershipRank() const override {
+        assert(setup_complete_);
+        return nodal_ownership_rank_;
+    }
+
     // Get nodal coordinates
     const std::vector<double>& GetNodalCoordinates() const override {
         assert(setup_complete_);
@@ -151,6 +157,7 @@ class Mesh : public MeshBase {
     // Calls:
     //   SetElementsConnectivity_()
     //   SetNodalOwnership_()
+    //   SetNodalOwnershipRank_()
     //   SetNodalCoordinates_()
     // ------------------------------------------------------------------------
     void ConnectMesh_();
@@ -166,26 +173,20 @@ class Mesh : public MeshBase {
     // Decompose global domain into blocks based on the number of elements
     // per direction
     // ------------------------------------------------------------------------
-    void SetPartitionsPerDirection_(std::vector<std::size_t>& partitions_start,
-                                    std::vector<std::size_t>& partitions_size);
+    void SetPartitionsPerDirection_();
 
     // ------------------------------------------------------------------------
     // Set partitions ordering
     // Update partition ordering from split history order to spatial order
     // ------------------------------------------------------------------------
-    void SetPartitionsOrdering_(std::vector<std::size_t>& partitions_start,
-                                std::vector<std::size_t>& partitions_size,
-                                std::vector<std::size_t>& partitions_order);
+    void SetPartitionsOrdering_();
 
     // ------------------------------------------------------------------------
     // Set elements numbering
     // For partition and ghost elements correspond to this proc's block, set
     // the number of elements, starting indices, ending indices, etc.
     // ------------------------------------------------------------------------
-    void SetElementsNumbering_(
-        const std::vector<std::size_t>& partitions_start,
-        const std::vector<std::size_t>& partitions_size,
-        const std::vector<std::size_t>& partitions_order);
+    void SetElementsNumbering_();
 
     // ------------------------------------------------------------------------
     // Set elements global id
@@ -214,6 +215,12 @@ class Mesh : public MeshBase {
     // Determines which active nodes are owned by this process
     // ------------------------------------------------------------------------
     void SetNodalOwnership_();
+
+    // ------------------------------------------------------------------------
+    // Set nodal ownership rank
+    // Determine which rank owns each active node
+    // ------------------------------------------------------------------------
+    void SetNodalOwnershipRank_();
 
     // ------------------------------------------------------------------------
     // Set nodal coordinates
@@ -347,6 +354,23 @@ class Mesh : public MeshBase {
     // std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
     // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
 
+    // Partitions start vector
+    // Size: 3 * (total number of MPI ranks)
+    // Flat convention:
+    //     [start_x0,start_y0,start_z0,...,start_xN,start_yN,start_zN]
+    std::vector<std::size_t> partitions_start_;
+
+    // Partitions size vector
+    // Size: 3 * (total number of MPI ranks)
+    // Flat convention: [size_x0,size_y0,size_z0,...,size_xN,size_yN,size_zN]
+    std::vector<std::size_t> partitions_size_;
+
+    // Partitions order vector
+    // Size: total number of MPI ranks
+    // Index: rank
+    // Value: block index
+    std::vector<std::size_t> partitions_order_;
+
     // Element local-to-global id vector
     // Size: number of partition + ghost elements (num_elem_total_)
     // Index: local element id
@@ -392,9 +416,17 @@ class Mesh : public MeshBase {
     // Value: local node id
     std::unordered_map<std::size_t, std::size_t> nodal_id_local_;
 
-    // Nodal ownership
+    // Nodal ownership boolean
     // Size: number of active nodes (num_nodes_active_)
     std::vector<char> nodal_ownership_;
+
+    // Nodal ownership global element id
+    // Size: number of active nodes (num_nodes_active_)
+    std::vector<std::size_t> nodal_ownership_elem_;
+
+    // Nodal ownership rank
+    // Size: number of active nodes (num_nodes_active_)
+    std::vector<int> nodal_ownership_rank_;
 
     // Nodal coordinates using local node indexing
     // Size: (3 * num_nodes_active_)

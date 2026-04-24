@@ -480,6 +480,52 @@ TEST_CASE("Mesh", "[mesh]") {
     }  // Nodal ownership
 
     // ------------------------------------------------------------------------
+    // Nodal ownership rank
+    // ------------------------------------------------------------------------
+    {
+        INFO("Nodal ownership rank");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Set total nodes (all partitions)
+        const std::size_t total_nodes = (nx + 1) * (ny + 1) * (nz + 1);
+
+        // Loop each 3x3x3 mesh
+        for (const auto &mesh : meshes) {
+            // Grab nodal ownership rank
+            const auto &owned_rank = mesh->GetNodalOwnershipRank();
+
+            // Count owned on this partition
+            const std::size_t owned_local =
+                std::count(owned_rank.begin(), owned_rank.end(), rank);
+
+            // Reduce number of owned
+            const std::size_t owned_global =
+                pwr::MPIUtilities::AllReduceSum(owned_local);
+
+            // -- Check if sum of owned matches number active nodes -----------
+            if (owned_global != total_nodes) {
+                num_failed_tests_local++;
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Nodal ownership rank
+
+    // ------------------------------------------------------------------------
     // Nodal coordinates
     // ------------------------------------------------------------------------
     {
