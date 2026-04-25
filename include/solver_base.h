@@ -8,8 +8,8 @@ class SolverBase {
    public:
     virtual ~SolverBase() = default;
 
-    // Step
-    virtual void Step() = 0;
+    // Run
+    virtual void Run() = 0;
 };
 
 }  // namespace pwr

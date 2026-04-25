@@ -9,12 +9,10 @@
 #include "mesh_base.h"
 #include "mpi_environment.h"
 #include "mpi_utilities.h"
-#include "output_manager.h"
 #include "particle_base.h"
 #include "particle_poisson.h"
 #include "solver_base.h"
 #include "solver_explicit.h"
-#include "solver_implicit.h"
 #include "utilities.h"
 #include "vtk_writer_base.h"
 #include "vtk_writer_mesh.h"
@@ -45,7 +43,7 @@ int main(int argc, char **argv) {
                                           z_max, nx, ny, nz);
 
     // ------------------------------------------------------------------------
-    // Set particles
+    // Generate particles
     // ------------------------------------------------------------------------
     const std::shared_ptr<pwr::ParticleBase> particle =
         std::make_shared<pwr::ParticlePoisson>();
@@ -65,43 +63,19 @@ int main(int argc, char **argv) {
         (*field_owned)[i] = nodal_ownership[i];
     }
 
-    // ------------------------------------------------------------------------
-    // Set operator (physics engine)
-    // ------------------------------------------------------------------------
+    std::vector<std::shared_ptr<pwr::Field>> fields{field_rank, field_owned};
+    std::vector<std::string> fields_names{"rank", "owned"};
 
     // ------------------------------------------------------------------------
     // Set solver
     // ------------------------------------------------------------------------
-
     const std::shared_ptr<pwr::SolverBase> solver_explicit =
-        std::make_shared<pwr::SolverExplicit>();
-
-    const std::shared_ptr<pwr::SolverBase> solver_implicit =
-        std::make_shared<pwr::SolverImplicit>();
+        std::make_shared<pwr::SolverExplicit>(mesh, fields, fields_names);
 
     // ------------------------------------------------------------------------
     // Run
     // ------------------------------------------------------------------------
-
-    solver_explicit->Step();
-
-    solver_implicit->Step();
-
-    // ------------------------------------------------------------------------
-    // Create output manager
-    // ------------------------------------------------------------------------
-    const std::size_t step = 0;
-    const std::size_t max_step = 100;  // To testing padding
-
-    const std::shared_ptr<pwr::OutputManager> output_manager =
-        std::make_shared<pwr::OutputManager>(mesh, max_step);
-
-    output_manager->AddField(field_rank, "rank");
-    output_manager->AddField(field_owned, "owned");
-
-    output_manager->WriteMeshFiles(step);
-
-    output_manager->WriteFieldFiles(step);
+    solver_explicit->Run();
 
     // ------------------------------------------------------------------------
     // Done
