@@ -9,6 +9,7 @@
 #include "field.h"
 #include "mesh.h"
 #include "output_manager.h"
+#include "particle_base.h"
 #include "solver_base.h"
 
 namespace pwr {
@@ -24,10 +25,15 @@ class SolverExplicit : public SolverBase {
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    SolverExplicit(const std::shared_ptr<const pwr::MeshBase>& mesh,
-                   const std::vector<std::shared_ptr<pwr::Field>>& fields,
-                   const std::vector<std::string>& fields_names)
-        : mesh_(mesh), fields_(fields), fields_names_(fields_names) {
+    SolverExplicit(
+        const std::shared_ptr<const pwr::MeshBase>& mesh,
+        const std::vector<std::shared_ptr<pwr::ParticleBase>>& particles,
+        const std::vector<std::shared_ptr<pwr::Field>>& fields,
+        const std::vector<std::string>& fields_names)
+        : mesh_(mesh),
+          particles_(particles),
+          fields_(fields),
+          fields_names_(fields_names) {
         // Sanity check: pointer to mesh is not null
         assert(mesh_);
 
@@ -88,6 +94,9 @@ class SolverExplicit : public SolverBase {
 
     // Shared pointer to mesh object
     const std::shared_ptr<const pwr::MeshBase> mesh_;
+
+    // Particles
+    const std::vector<std::shared_ptr<pwr::ParticleBase>> particles_;
 
     // Fields
     const std::vector<std::shared_ptr<pwr::Field>> fields_;

@@ -1,8 +1,10 @@
 #include <mpi.h>
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "field.h"
 #include "mesh.h"
@@ -33,10 +35,10 @@ int main(int argc, char **argv) {
     const double z_min = 0.;
     const double x_max = 1.;
     const double y_max = 1.;
-    const double z_max = 1.;
-    const std::size_t nx = 16;
-    const std::size_t ny = 16;
-    const std::size_t nz = 16;
+    const double z_max = 10.;
+    const std::size_t nx = 1;
+    const std::size_t ny = 1;
+    const std::size_t nz = 10;
 
     const std::shared_ptr<const pwr::MeshBase> mesh =
         std::make_shared<const pwr::Mesh>(x_min, y_min, z_min, x_max, y_max,
@@ -45,32 +47,61 @@ int main(int argc, char **argv) {
     // ------------------------------------------------------------------------
     // Generate particles
     // ------------------------------------------------------------------------
-    const std::shared_ptr<pwr::ParticleBase> particle =
-        std::make_shared<pwr::ParticlePoisson>();
+    const double nz_double = static_cast<double>(nz);
+    const double ny_double = static_cast<double>(ny);
+    const double nx_double = static_cast<double>(nx);
+
+    std::vector<std::shared_ptr<pwr::ParticleBase>> particles;
+    std::size_t id = 0;
+
+    for (std::size_t nz_i = 0; nz_i < nz; ++nz_i) {
+        // Set coordinate z-direction
+        const double z_i =
+            (0.5 + static_cast<double>(nz_i)) * (z_max - z_min) / nz_double;
+        for (std::size_t ny_i = 0; ny_i < ny; ++ny_i) {
+            // Set coordinate y-direction
+            const double y_i =
+                (0.5 + static_cast<double>(ny_i)) * (y_max - y_min) / ny_double;
+            for (std::size_t nx_i = 0; nx_i < nx; ++nx_i) {
+                // Set coordinate x-direction
+                const double x_i = (0.5 + static_cast<double>(nx_i)) *
+                                   (x_max - x_min) / nx_double;
+
+                // Set coords array
+                std::array<double, 3> coords{x_i, y_i, z_i};
+
+                // Generate particle
+                const std::shared_ptr<pwr::ParticleBase> particle =
+                    std::make_shared<pwr::ParticlePoisson>(id, coords);
+
+                // Save it to vector
+                particles.emplace_back(particle);
+
+                // Update id
+                id++;
+            }
+        }
+    }
 
     // ------------------------------------------------------------------------
     // Set fields
     // ------------------------------------------------------------------------
-    const std::shared_ptr<pwr::Field> field_rank =
+    const std::shared_ptr<pwr::Field> field_u =
         std::make_shared<pwr::Field>(mesh->GetNumNodesActive());
 
-    const std::shared_ptr<pwr::Field> field_owned =
-        std::make_shared<pwr::Field>(mesh->GetNumNodesActive());
-    const auto &nodal_ownership = mesh->GetNodalOwnership();
-
-    for (std::size_t i = 0; i < field_rank->GetFieldSize(); ++i) {
-        (*field_rank)[i] = rank;
-        (*field_owned)[i] = nodal_ownership[i];
+    for (std::size_t i = 0; i < field_u->GetFieldSize(); ++i) {
+        (*field_u)[i] = 0;
     }
 
-    std::vector<std::shared_ptr<pwr::Field>> fields{field_rank, field_owned};
-    std::vector<std::string> fields_names{"rank", "owned"};
+    const std::vector<std::shared_ptr<pwr::Field>> fields{field_u};
+    const std::vector<std::string> fields_names{"temperature"};
 
     // ------------------------------------------------------------------------
     // Set solver
     // ------------------------------------------------------------------------
     const std::shared_ptr<pwr::SolverBase> solver_explicit =
-        std::make_shared<pwr::SolverExplicit>(mesh, fields, fields_names);
+        std::make_shared<pwr::SolverExplicit>(mesh, particles, fields,
+                                              fields_names);
 
     // ------------------------------------------------------------------------
     // Run

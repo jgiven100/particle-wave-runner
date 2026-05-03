@@ -1,9 +1,9 @@
 #ifndef PWR_PARTICLE_POISSON_H
 #define PWR_PARTICLE_POISSON_H
 
+#include <array>
 #include <cassert>
 #include <cstddef>
-#include <iostream>  // TODO
 
 #include "particle_base.h"
 
@@ -15,8 +15,8 @@ class ParticlePoisson : public ParticleBase {
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    ParticlePoisson() {
-        std::cout << "Inside ParticlePoisson constructor" << std::endl;
+    ParticlePoisson(std::size_t id, std::array<double, 3> coords_global)
+        : id_(id), coords_global_(coords_global) {
         Setup_();
     }
 
@@ -39,6 +39,24 @@ class ParticlePoisson : public ParticleBase {
     // Getters
     // ------------------------------------------------------------------------
 
+    // Get id
+    std::size_t GetId() const override {
+        assert(setup_complete_);
+        return id_;
+    }
+
+    // Get global coordinates
+    const std::array<double, 3>& GetCoordsGlobal() const override {
+        assert(setup_complete_);
+        return coords_global_;
+    }
+
+    // Get local coordinates
+    const std::array<double, 3>& GetCoordsLocal() const override {
+        assert(setup_complete_);
+        return coords_local_;
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup particle
@@ -56,6 +74,15 @@ class ParticlePoisson : public ParticleBase {
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
+
+    // Id
+    const std::size_t id_;
+
+    // Local coordinates
+    std::array<double, 3> coords_local_;
+
+    // Global coordinates
+    std::array<double, 3> coords_global_;
 };
 
 }  // namespace pwr
