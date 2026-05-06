@@ -1,5 +1,5 @@
-#ifndef VTK_WRITER_MESH_H
-#define VTK_WRITER_MESH_H
+#ifndef VTK_WRITER_PARTICLES_H
+#define VTK_WRITER_PARTICLES_H
 
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "mesh.h"
+#include "particle_base.h"
 #include "utilities.h"
 #include "vtk_writer_base.h"
 
@@ -22,40 +24,42 @@ namespace pwr {
 // and not the complete type
 class MeshBase;
 
-// vtk writer class for mesh
-class VTKWriterMesh : public VTKWriterBase {
+// vtk writer class for particles
+class VTKWriterParticles : public VTKWriterBase {
    public:
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const std::shared_ptr<const pwr::MeshBase>& mesh)
+    VTKWriterParticles(const std::shared_ptr<const pwr::MeshBase>& mesh)
         : mesh_(mesh) {
-        // Sanity check: pointer to mesh is not null
+        // Sanity check: point to mesh is not null
         assert(mesh_);
 
-        Setup_();
+        // Need to call `AddParticles()` before calling `Setup_`!
+        // Setup_();
     }
 
     // ------------------------------------------------------------------------
     // Destructor
     // ------------------------------------------------------------------------
-    ~VTKWriterMesh() override = default;
+    ~VTKWriterParticles() override = default;
 
     // ------------------------------------------------------------------------
     // Delete copy constructor
     // ------------------------------------------------------------------------
-    VTKWriterMesh(const VTKWriterMesh&) = delete;
+    VTKWriterParticles(const VTKWriterParticles&) = delete;
 
     // ------------------------------------------------------------------------
     // Delete copy assignment
     // ------------------------------------------------------------------------
-    VTKWriterMesh& operator=(const VTKWriterMesh&) = delete;
+    VTKWriterParticles& operator=(const VTKWriterParticles&) = delete;
 
     // ------------------------------------------------------------------------
     // Finalize setup
     // ------------------------------------------------------------------------
     void FinalizeSetup() override {
-        // Nothing to do here... `Setup_` can be called by constructor
+        // Call after adding particles
+        Setup_();
     }
 
     // ------------------------------------------------------------------------
@@ -63,7 +67,8 @@ class VTKWriterMesh : public VTKWriterBase {
     // ------------------------------------------------------------------------
     void AddField(const std::shared_ptr<pwr::Field>& /*field*/,
                   const std::string& /*field_name*/) override {
-        assert(setup_complete_);
+        // `Setup_` is *not* called by consturctor for particle writer
+        // assert(setup_complete_);
         std::stringstream error_message;
         error_message << "`AddField` not supported in "
                       << std::source_location::current().function_name();
@@ -74,17 +79,16 @@ class VTKWriterMesh : public VTKWriterBase {
     // Add particles
     // ------------------------------------------------------------------------
     void AddParticles(
-        const std::vector<std::shared_ptr<pwr::ParticleBase>>& /*particles*/,
-        const std::string& /*particles_name*/) override {
-        assert(setup_complete_);
-        std::stringstream error_message;
-        error_message << "`AddParticles` not supported in "
-                      << std::source_location::current().function_name();
-        pwr::Utilities::PrintErrorOnRoot(error_message.str());
+        const std::vector<std::shared_ptr<pwr::ParticleBase>>& particles,
+        const std::string& particles_name) override {
+        // `Setup_` is *not* called by consturctor for particle writer
+        // assert(setup_complete_);
+        particles_ = particles;
+        particles_name_ = particles_name;
     }
 
     // ------------------------------------------------------------------------
-    // Write output file
+    // Write output files
     // ------------------------------------------------------------------------
     void Write(const std::string& filename) const override {
         assert(setup_complete_);
@@ -92,7 +96,7 @@ class VTKWriterMesh : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
+    // Write parallel output files
     // ------------------------------------------------------------------------
     void WriteParallel(
         const std::string& filename,
@@ -103,7 +107,7 @@ class VTKWriterMesh : public VTKWriterBase {
 
    private:
     // ------------------------------------------------------------------------
-    // Setup vtk writer for mesh
+    // Setup vtk writer for particles
     // Calls:
     //   InitializeWriter_()
     //   CheckSetup_()
@@ -111,7 +115,7 @@ class VTKWriterMesh : public VTKWriterBase {
     void Setup_();
 
     // ------------------------------------------------------------------------
-    // Initialize vtk writer for mesh
+    // Initialize vtk writer for particles
     // ------------------------------------------------------------------------
     void InitializeWriter_();
 
@@ -127,7 +131,7 @@ class VTKWriterMesh : public VTKWriterBase {
     void Write_(const std::string& filename) const;
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
+    // Write parallel output files
     // ------------------------------------------------------------------------
     void WriteParallel_(const std::string& filename,
                         const std::vector<std::string>& piece_filenames) const;
@@ -138,13 +142,19 @@ class VTKWriterMesh : public VTKWriterBase {
     // Shared pointer to mesh object
     const std::shared_ptr<const pwr::MeshBase> mesh_;
 
+    // Container to shared pointers to particle objects
+    std::vector<std::shared_ptr<pwr::ParticleBase>> particles_;
+
+    // Container to hold name for shared pointers to particle objects
+    std::string particles_name_;
+
     // Smart vtk pointer to points
     vtkSmartPointer<vtkPoints> points_;
 
-    // Smart vtk pointer to grid
+    // Smart vtk point to grid
     vtkSmartPointer<vtkUnstructuredGrid> grid_;
 };
 
 }  // namespace pwr
 
-#endif  // VTK_WRITER_MESH_H
+#endif  // VTK_WRITER_PARTICLE_H

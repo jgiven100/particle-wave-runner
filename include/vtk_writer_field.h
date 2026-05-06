@@ -7,18 +7,21 @@
 
 #include <cassert>
 #include <memory>
+#include <source_location>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "field.h"
 #include "mesh.h"
+#include "utilities.h"
 #include "vtk_writer_base.h"
 
 namespace pwr {
 
 // Forward declare MeshBase
 // This is sufficient since the header only stores a pointer-like object
-// and the complete type
+// and not the complete type
 class MeshBase;
 
 // vtk writer class for field
@@ -51,6 +54,13 @@ class VTKWriterField : public VTKWriterBase {
     VTKWriterField& operator=(const VTKWriterField&) = delete;
 
     // ------------------------------------------------------------------------
+    // Finalize setup
+    // ------------------------------------------------------------------------
+    void FinalizeSetup() override {
+        // Nothing to do here... `Setup_` can be called by constructor
+    }
+
+    // ------------------------------------------------------------------------
     // Add field
     // ------------------------------------------------------------------------
     void AddField(const std::shared_ptr<pwr::Field>& field,
@@ -61,7 +71,20 @@ class VTKWriterField : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
-    // Write output file
+    // Add particles
+    // ------------------------------------------------------------------------
+    void AddParticles(
+        const std::vector<std::shared_ptr<pwr::ParticleBase>>& /*particles*/,
+        const std::string& /*particles_name*/) override {
+        assert(setup_complete_);
+        std::stringstream error_message;
+        error_message << "`AddParticles` not supported in "
+                      << std::source_location::current().function_name();
+        pwr::Utilities::PrintErrorOnRoot(error_message.str());
+    }
+
+    // ------------------------------------------------------------------------
+    // Write output files
     // ------------------------------------------------------------------------
     void Write(const std::string& filename) const override {
         assert(setup_complete_);
@@ -69,7 +92,7 @@ class VTKWriterField : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
-    // Write parallel output file
+    // Write parallel output files
     // ------------------------------------------------------------------------
     void WriteParallel(
         const std::string& filename,

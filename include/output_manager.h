@@ -8,6 +8,7 @@
 
 #include "field.h"
 #include "mesh_base.h"
+#include "particle_base.h"
 #include "vtk_writer_base.h"
 
 namespace pwr {
@@ -63,6 +64,24 @@ class OutputManager {
     }
 
     // ------------------------------------------------------------------------
+    // Add particles
+    // ------------------------------------------------------------------------
+    void AddParticles(
+        const std::vector<std::shared_ptr<pwr::ParticleBase>>& particles,
+        const std::string& particles_name) {
+        // assert(setup_complete_);  // Setup_ called after adding particles
+        vtk_writer_particles_->AddParticles(particles, particles_name);
+    }
+
+    // ------------------------------------------------------------------------
+    // Finalize writers setup
+    // ------------------------------------------------------------------------
+    void FinalizeWritersSetup() {
+        assert(setup_complete_);
+        FinalizeWritersSetup_();
+    }
+
+    // ------------------------------------------------------------------------
     // Write field files
     // ------------------------------------------------------------------------
     void WriteFieldFiles(const int step) {
@@ -79,11 +98,11 @@ class OutputManager {
     }
 
     // ------------------------------------------------------------------------
-    // Write particle files
+    // Write particles files
     // ------------------------------------------------------------------------
-    void WriteParticleFiles(const int step) {
+    void WriteParticlesFiles(const int step) {
         assert(setup_complete_);
-        WriteParticleFiles_(step);
+        WriteParticlesFiles_(step);
     }
 
    private:
@@ -125,6 +144,11 @@ class OutputManager {
     void CheckSetup_();
 
     // ------------------------------------------------------------------------
+    // Finalize writers setup
+    // ------------------------------------------------------------------------
+    void FinalizeWritersSetup_();
+
+    // ------------------------------------------------------------------------
     // Write field files
     // ------------------------------------------------------------------------
     void WriteFieldFiles_(int step);
@@ -135,9 +159,9 @@ class OutputManager {
     void WriteMeshFiles_(int step);
 
     // ------------------------------------------------------------------------
-    // Write particle files
+    // Write particles files
     // ------------------------------------------------------------------------
-    void WriteParticleFiles_(int step);
+    void WriteParticlesFiles_(int step);
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
@@ -152,7 +176,7 @@ class OutputManager {
     std::shared_ptr<const pwr::VTKWriterBase> vtk_writer_mesh_;
 
     // Shared pointer to vtk writer object for particles
-    std::shared_ptr<const pwr::VTKWriterBase> vtk_writer_particles_;
+    std::shared_ptr<pwr::VTKWriterBase> vtk_writer_particles_;
 
     // Output directory name
     std::string output_dir_name_;

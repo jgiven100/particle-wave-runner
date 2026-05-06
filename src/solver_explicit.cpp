@@ -38,6 +38,12 @@ void SolverExplicit::SetOutputManager_() {
         output_manager_->AddField(field, field_name);
     }
 
+    // Add particles
+    output_manager_->AddParticles(particles_, particles_name_);
+
+    // Finalize setup for writers
+    output_manager_->FinalizeWritersSetup();
+
 }  // SolverExplicit::SetOutputManager_
 
 // ----------------------------------------------------------------------------
@@ -53,11 +59,18 @@ void SolverExplicit::CheckSetup_() {
 // Run
 // ----------------------------------------------------------------------------
 void SolverExplicit::Run_() {
-    ;  // TODO
+    // TODO -- write mesh at the start
+
+    // TODO -- loop steps
+
+    // TODO -- field and particles outputs at each step
+
+    // TODO -- time series output at the end
 
     const std::size_t step = 0;
     output_manager_->WriteMeshFiles(step);
     output_manager_->WriteFieldFiles(step);
+    output_manager_->WriteParticlesFiles(step);
 
 }  // SolverExplicit::Run_
 

@@ -57,6 +57,12 @@ class ParticlePoisson : public ParticleBase {
         return coords_local_;
     }
 
+    // Get solution
+    double GetSolution() const override {
+        assert(setup_complete_);
+        return u_;
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup particle
@@ -83,6 +89,9 @@ class ParticlePoisson : public ParticleBase {
 
     // Global coordinates
     std::array<double, 3> coords_global_;
+
+    // Solution
+    double u_ = 101.;  // TODO update
 };
 
 }  // namespace pwr

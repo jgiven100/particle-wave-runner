@@ -28,10 +28,12 @@ class SolverExplicit : public SolverBase {
     SolverExplicit(
         const std::shared_ptr<const pwr::MeshBase>& mesh,
         const std::vector<std::shared_ptr<pwr::ParticleBase>>& particles,
+        const std::string& particles_name,
         const std::vector<std::shared_ptr<pwr::Field>>& fields,
         const std::vector<std::string>& fields_names)
         : mesh_(mesh),
           particles_(particles),
+          particles_name_(particles_name),
           fields_(fields),
           fields_names_(fields_names) {
         // Sanity check: pointer to mesh is not null
@@ -97,6 +99,9 @@ class SolverExplicit : public SolverBase {
 
     // Particles
     const std::vector<std::shared_ptr<pwr::ParticleBase>> particles_;
+
+    // Particles name
+    const std::string particles_name_;
 
     // Fields
     const std::vector<std::shared_ptr<pwr::Field>> fields_;

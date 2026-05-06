@@ -83,6 +83,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    const std::string particles_name = "temperature";
+
     // ------------------------------------------------------------------------
     // Set fields
     // ------------------------------------------------------------------------
@@ -100,8 +102,8 @@ int main(int argc, char **argv) {
     // Set solver
     // ------------------------------------------------------------------------
     const std::shared_ptr<pwr::SolverBase> solver_explicit =
-        std::make_shared<pwr::SolverExplicit>(mesh, particles, fields,
-                                              fields_names);
+        std::make_shared<pwr::SolverExplicit>(mesh, particles, particles_name,
+                                              fields, fields_names);
 
     // ------------------------------------------------------------------------
     // Run

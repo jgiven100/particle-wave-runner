@@ -23,6 +23,9 @@ class ParticleBase {
 
     // Get local coordinates
     virtual const std::array<double, 3>& GetCoordsLocal() const = 0;
+
+    // Get solution
+    virtual double GetSolution() const = 0;
 };
 
 }  // namespace pwr
