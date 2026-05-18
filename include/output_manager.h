@@ -25,19 +25,13 @@ class OutputManager {
     // Constructor
     // ------------------------------------------------------------------------
     OutputManager(const std::shared_ptr<const pwr::MeshBase>& mesh,
-                  std::size_t max_step)
-        : mesh_(mesh), max_step_(max_step) {
+                  std::size_t max_step, std::size_t output_step)
+        : mesh_(mesh), max_step_(max_step), output_step_(output_step) {
         // Sanity check: pointer to mesh is not null
         assert(mesh_);
 
         Setup_();
     }
-
-    // ------------------------------------------------------------------------
-    // Constructor delegation
-    // ------------------------------------------------------------------------
-    OutputManager(const std::shared_ptr<const pwr::MeshBase>& mesh)
-        : OutputManager(mesh, 0) {}
 
     // ------------------------------------------------------------------------
     // Destructor
@@ -84,25 +78,49 @@ class OutputManager {
     // ------------------------------------------------------------------------
     // Write field files
     // ------------------------------------------------------------------------
-    void WriteFieldFiles(const int step) {
+    void WriteFieldFiles(const std::size_t step) {
         assert(setup_complete_);
         WriteFieldFiles_(step);
     }
 
     // ------------------------------------------------------------------------
+    // Write field files time
+    // ------------------------------------------------------------------------
+    void WriteFieldFilesTime() {
+        assert(setup_complete_);
+        WriteFieldFilesTime_();
+    }
+
+    // ------------------------------------------------------------------------
     // Write mesh files
     // ------------------------------------------------------------------------
-    void WriteMeshFiles(const int step) {
+    void WriteMeshFiles(const std::size_t step) {
         assert(setup_complete_);
         WriteMeshFiles_(step);
     }
 
     // ------------------------------------------------------------------------
+    // Write mesh files time
+    // ------------------------------------------------------------------------
+    void WriteMeshFilesTime() {
+        assert(setup_complete_);
+        WriteMeshFilesTime_();
+    }
+
+    // ------------------------------------------------------------------------
     // Write particles files
     // ------------------------------------------------------------------------
-    void WriteParticlesFiles(const int step) {
+    void WriteParticlesFiles(const std::size_t step) {
         assert(setup_complete_);
         WriteParticlesFiles_(step);
+    }
+
+    // ------------------------------------------------------------------------
+    // Write particles files time
+    // ------------------------------------------------------------------------
+    void WriteParticlesFilesTime() {
+        assert(setup_complete_);
+        WriteParticlesFilesTime_();
     }
 
    private:
@@ -151,17 +169,32 @@ class OutputManager {
     // ------------------------------------------------------------------------
     // Write field files
     // ------------------------------------------------------------------------
-    void WriteFieldFiles_(int step);
+    void WriteFieldFiles_(const std::size_t step);
+
+    // ------------------------------------------------------------------------
+    // Write field files time
+    // ------------------------------------------------------------------------
+    void WriteFieldFilesTime_();
 
     // ------------------------------------------------------------------------
     // Write mesh files
     // ------------------------------------------------------------------------
-    void WriteMeshFiles_(int step);
+    void WriteMeshFiles_(const std::size_t step);
+
+    // ------------------------------------------------------------------------
+    // Write mesh files time
+    // ------------------------------------------------------------------------
+    void WriteMeshFilesTime_();
 
     // ------------------------------------------------------------------------
     // Write particles files
     // ------------------------------------------------------------------------
-    void WriteParticlesFiles_(int step);
+    void WriteParticlesFiles_(const std::size_t step);
+
+    // ------------------------------------------------------------------------
+    // Write particles files time
+    // ------------------------------------------------------------------------
+    void WriteParticlesFilesTime_();
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;
@@ -183,6 +216,9 @@ class OutputManager {
 
     // Maximum step
     std::size_t max_step_;
+
+    // Output step
+    std::size_t output_step_;
 
     // Step padding size
     int step_padding_;

@@ -125,7 +125,7 @@ void OutputManager::FinalizeWritersSetup_() {
 // ----------------------------------------------------------------------------
 // Write output files for field
 // ----------------------------------------------------------------------------
-void OutputManager::WriteFieldFiles_(const int step) {
+void OutputManager::WriteFieldFiles_(const std::size_t step) {
     // String padding for step
     std::string step_str = std::to_string(step);
     Utilities::PadString(step_str, step_padding_);
@@ -170,9 +170,17 @@ void OutputManager::WriteFieldFiles_(const int step) {
 }  // OutputManager::WriteFieldFiles_
 
 // ----------------------------------------------------------------------------
+// Write output time files for field
+// ----------------------------------------------------------------------------
+void OutputManager::WriteFieldFilesTime_() {
+    ;  // TODO
+
+}  // OutputManager::WriteFieldFilesTime_
+
+// ----------------------------------------------------------------------------
 // Write output files for mesh
 // ----------------------------------------------------------------------------
-void OutputManager::WriteMeshFiles_(const int step) {
+void OutputManager::WriteMeshFiles_(const std::size_t step) {
     // String padding for step
     std::string step_str = std::to_string(step);
     Utilities::PadString(step_str, step_padding_);
@@ -217,9 +225,17 @@ void OutputManager::WriteMeshFiles_(const int step) {
 }  // OutputManager::WriteMeshFiles_
 
 // ----------------------------------------------------------------------------
+// Write output time files for mesh
+// ----------------------------------------------------------------------------
+void OutputManager::WriteMeshFilesTime_() {
+    ;  // TODO
+
+}  // OutputManager::WriteMeshFilesTime_
+
+// ----------------------------------------------------------------------------
 // Write output files for particles
 // ----------------------------------------------------------------------------
-void OutputManager::WriteParticlesFiles_(const int step) {
+void OutputManager::WriteParticlesFiles_(const std::size_t step) {
     // String padding for step
     std::string step_str = std::to_string(step);
     Utilities::PadString(step_str, step_padding_);
@@ -263,5 +279,13 @@ void OutputManager::WriteParticlesFiles_(const int step) {
     }
 
 }  // OutputManager::WriteParticlesFiles_
+
+// ----------------------------------------------------------------------------
+// Write output time files for particles
+// ----------------------------------------------------------------------------
+void OutputManager::WriteParticlesFilesTime_() {
+    ;  // TODO
+
+}  // OutputManager::WriteParticlesFilesTime_
 
 };  // namespace pwr

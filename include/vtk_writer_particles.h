@@ -88,7 +88,7 @@ class VTKWriterParticles : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
-    // Write output files
+    // Write output file
     // ------------------------------------------------------------------------
     void Write(const std::string& filename) const override {
         assert(setup_complete_);
@@ -96,13 +96,23 @@ class VTKWriterParticles : public VTKWriterBase {
     }
 
     // ------------------------------------------------------------------------
-    // Write parallel output files
+    // Write parallel output file
     // ------------------------------------------------------------------------
     void WriteParallel(
         const std::string& filename,
         const std::vector<std::string>& piece_filenames) const override {
         assert(setup_complete_);
         WriteParallel_(filename, piece_filenames);
+    }
+
+    // ------------------------------------------------------------------------
+    // Write time output file
+    // ------------------------------------------------------------------------
+    void WriteTime(
+        const std::string& filename,
+        const std::vector<std::string>& piece_filenames) const override {
+        assert(setup_complete_);
+        WriteTime_(filename, piece_filenames);
     }
 
    private:
@@ -131,10 +141,16 @@ class VTKWriterParticles : public VTKWriterBase {
     void Write_(const std::string& filename) const;
 
     // ------------------------------------------------------------------------
-    // Write parallel output files
+    // Write parallel output file
     // ------------------------------------------------------------------------
     void WriteParallel_(const std::string& filename,
                         const std::vector<std::string>& piece_filenames) const;
+
+    // ------------------------------------------------------------------------
+    // Write time output file
+    // ------------------------------------------------------------------------
+    void WriteTime_(const std::string& filename,
+                    const std::vector<std::string>& piece_filenames) const;
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;

@@ -101,6 +101,16 @@ class VTKWriterMesh : public VTKWriterBase {
         WriteParallel_(filename, piece_filenames);
     }
 
+    // ------------------------------------------------------------------------
+    // Write time output file
+    // ------------------------------------------------------------------------
+    void WriteTime(
+        const std::string& filename,
+        const std::vector<std::string>& piece_filenames) const override {
+        assert(setup_complete_);
+        WriteTime_(filename, piece_filenames);
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup vtk writer for mesh
@@ -131,6 +141,12 @@ class VTKWriterMesh : public VTKWriterBase {
     // ------------------------------------------------------------------------
     void WriteParallel_(const std::string& filename,
                         const std::vector<std::string>& piece_filenames) const;
+
+    // ------------------------------------------------------------------------
+    // Write time output file
+    // ------------------------------------------------------------------------
+    void WriteTime_(const std::string& filename,
+                    const std::vector<std::string>& piece_filenames) const;
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;

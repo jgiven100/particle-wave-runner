@@ -69,10 +69,16 @@ class SolverExplicit : public SolverBase {
     // ------------------------------------------------------------------------
     // Setup explicit solver
     // Calls:
+    //   SetTimeStepper_()
     //   SetOutputManager_()
     //   CheckSetup_()
     // ------------------------------------------------------------------------
     void Setup_();
+
+    // ------------------------------------------------------------------------
+    // Set time stepper
+    // ------------------------------------------------------------------------
+    void SetTimeStepper_();
 
     // ------------------------------------------------------------------------
     // Set output manager
@@ -113,7 +119,10 @@ class SolverExplicit : public SolverBase {
     std::shared_ptr<pwr::OutputManager> output_manager_;
 
     // Max step
-    std::size_t max_step_ = 100;  // TODO : read from file
+    std::size_t max_step_;
+
+    // Output step
+    std::size_t output_step_;
 };
 
 }  // namespace pwr

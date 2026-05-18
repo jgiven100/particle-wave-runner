@@ -96,7 +96,7 @@ void VTKWriterParticles::CheckSetup_() {
 }  // VTKWriterParticles::CheckSetup_
 
 // ----------------------------------------------------------------------------
-// Write output files
+// Write output file
 // ----------------------------------------------------------------------------
 void VTKWriterParticles::Write_(const std::string &filename) const {
     // Clear previous arrays
@@ -157,7 +157,7 @@ void VTKWriterParticles::Write_(const std::string &filename) const {
 }  // VTKWriterParticles::Write_
 
 // ----------------------------------------------------------------------------
-// Write parallel output files
+// Write parallel output file
 // ----------------------------------------------------------------------------
 void VTKWriterParticles::WriteParallel_(
     const std::string &filename,
@@ -217,5 +217,29 @@ void VTKWriterParticles::WriteParallel_(
     out.close();
 
 }  // VTKWriterParticles::WriteParallel_
+
+// ----------------------------------------------------------------------------
+// Write time output file
+// ----------------------------------------------------------------------------
+void VTKWriterParticles::WriteTime_(
+    const std::string &filename,
+    const std::vector<std::string> &piece_filenames) const {
+    // Open file
+    std::ofstream out(filename);
+
+    // Print error if open file failed
+    if (!out) {
+        std::stringstream error_message;
+        error_message << "`std::ofstream out(filename)` failed in "
+                      << std::source_location::current().function_name();
+        Utilities::PrintErrorOnRoot(error_message.str());
+    }
+
+    // TODO
+
+    // Close file
+    out.close();
+
+}  // VTKWriterParticles::WriteTime_
 
 }  // namespace pwr

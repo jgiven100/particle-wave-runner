@@ -37,6 +37,11 @@ class VTKWriterBase {
     virtual void WriteParallel(
         const std::string& filename,
         const std::vector<std::string>& piece_filenames) const = 0;
+
+    // Write time output file
+    virtual void WriteTime(
+        const std::string& filename,
+        const std::vector<std::string>& piece_filenames) const = 0;
 };
 
 }  // namespace pwr
