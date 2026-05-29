@@ -117,13 +117,15 @@ void SolverExplicit::Run_() {
             info_message << "Step " << step_str << " of " << max_step_;
             Utilities::PrintInfoOnRoot(info_message.str());
 
-            // output field and particles at current step
+            // Output field and particles at current step
             output_manager_->WriteFieldFiles(step + 1);
             output_manager_->WriteParticlesFiles(step + 1);
         }
     }
 
-    // TODO -- write time series
+    // Write field and particles time series
+    output_manager_->WriteFieldFilesTime();
+    output_manager_->WriteParticlesFilesTime();
 
 }  // SolverExplicit::Run_
 

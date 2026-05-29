@@ -195,14 +195,14 @@ void VTKWriterParticles::WriteParallel_(
     const char *particlesType = "Float64";
 
     // PPointData: declare the field array written in Write_
-    out << R"(    <PPointsData>)" << "\n";
-    out << "      <PdataArray type=\"" << particlesType
+    out << R"(    <PPointData>)" << "\n";
+    out << "      <PDataArray type=\"" << particlesType
         << "\" NumberOfComponents=\"1\" Name=\"" << particles_name_ << "\"/>\n";
     out << R"(    </PPointData>)" << "\n";
 
     // PCellData is empty (for now)
     out << R"(    <PCellData>)" << "\n";
-    out << R"(    <\PCellData>)" << "\n";
+    out << R"(    </PCellData>)" << "\n";
 
     // List pieces
     for (const auto &pname : piece_filenames) {
@@ -211,7 +211,7 @@ void VTKWriterParticles::WriteParallel_(
 
     // Footer
     out << R"(  </PUnstructuredGrid>)" << "\n";
-    out << R"(<VTKFile>)" << "\n";
+    out << R"(</VTKFile>)" << "\n";
 
     // Close file
     out.close();
@@ -235,7 +235,24 @@ void VTKWriterParticles::WriteTime_(
         Utilities::PrintErrorOnRoot(error_message.str());
     }
 
-    // TODO
+    // Header
+    out << R"(<?xml version="1.0"?>)" << "\n";
+    out << R"(<VTKFile type="Collection" )";
+    out << R"(version="0.1" byte_order="LittleEndian">)" << "\n";
+
+    // Start collection
+    out << R"(  <Collection>)" << "\n";
+
+    // List pieces
+    for (std::size_t p = 0; p < piece_filenames.size(); ++p) {
+        const auto &pname = piece_filenames[p];
+        out << "    <DataSet timestep=\"" << p
+            << "\" group=\"\" part=\"0\" file=\"" << pname << "\"/>\n";
+    }
+
+    // Footer
+    out << R"(  </Collection>)" << "\n";
+    out << R"(</VTKFile>)" << "\n";
 
     // Close file
     out.close();

@@ -131,6 +131,7 @@ class OutputManager {
     //   InitializeFieldWriter_();
     //   InitializeMeshWriter_()
     //   InitializeParticleWriter_()
+    //   SetTimeSteps_()
     //   CheckSetup_()
     // ------------------------------------------------------------------------
     void Setup_();
@@ -154,6 +155,11 @@ class OutputManager {
     // Initialize particle writer
     // ------------------------------------------------------------------------
     void InitializeParticleWriter_();
+
+    // ------------------------------------------------------------------------
+    // Set time and steps
+    // ------------------------------------------------------------------------
+    void SetTimeSteps_();
 
     // ------------------------------------------------------------------------
     // Check output manager setup
@@ -219,6 +225,9 @@ class OutputManager {
 
     // Output step
     std::size_t output_step_;
+
+    // Number of files
+    std::size_t steps_;
 
     // Step padding size
     int step_padding_;

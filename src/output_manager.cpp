@@ -22,6 +22,7 @@ void OutputManager::Setup_() {
     InitializeFieldWriter_();
     InitializeMeshWriter_();
     InitializeParticleWriter_();
+    SetTimeSteps_();
     CheckSetup_();
 
 }  // OutputManager::Setup_
@@ -105,6 +106,18 @@ void OutputManager::InitializeParticleWriter_() {
 }  // OutputManager::InitializeParticleWriter_
 
 // ----------------------------------------------------------------------------
+// Set time and steps
+// ----------------------------------------------------------------------------
+void OutputManager::SetTimeSteps_() {
+    // Sanity check: max_step_ and output_step_ are consistent
+    assert(max_step_ % output_step_ == 0);
+
+    // Set number of output steps (files) generated; `+1` to count 0th step
+    steps_ = (max_step_ / output_step_) + 1;
+
+}  // OutputManager::SetTimeSteps_()
+
+// ----------------------------------------------------------------------------
 // Check output manager
 // ----------------------------------------------------------------------------
 void OutputManager::CheckSetup_() {
@@ -144,7 +157,7 @@ void OutputManager::WriteFieldFiles_(const std::size_t step) {
     // Ensure each `.vtu` is written before `.pvtu` is written
     MPIUtilities::Barrier();
 
-    // Only write ptvu on root
+    // Only write pvtu on root
     if (rank_ == 0) {
         // Output filename
         const std::string filename_pvtu =
@@ -173,7 +186,27 @@ void OutputManager::WriteFieldFiles_(const std::size_t step) {
 // Write output time files for field
 // ----------------------------------------------------------------------------
 void OutputManager::WriteFieldFilesTime_() {
-    ;  // TODO
+    // Only write pvd on root
+    if (rank_ == 0) {
+        // Output filename
+        const std::string filename_pvd = output_dir_name_ + "field.pvd";
+
+        // Place to hold each timestep's filename
+        std::vector<std::string> piece_filenames(steps_);
+
+        // Loop each output step and save file name
+        for (std::size_t s = 0; s < steps_; ++s) {
+            // String padding for output step
+            std::string s_str = std::to_string(s * output_step_);
+            Utilities::PadString(s_str, step_padding_);
+
+            // Save name
+            piece_filenames[s] = "field_step" + s_str + ".pvtu";
+        }
+
+        // Write time file
+        vtk_writer_field_->WriteTime(filename_pvd, piece_filenames);
+    }
 
 }  // OutputManager::WriteFieldFilesTime_
 
@@ -199,7 +232,7 @@ void OutputManager::WriteMeshFiles_(const std::size_t step) {
     // Ensure each `.vtu` is written before `.pvtu` is written
     MPIUtilities::Barrier();
 
-    // Only write ptvu on root
+    // Only write pvtu on root
     if (rank_ == 0) {
         // Output filename
         const std::string filename_pvtu =
@@ -228,7 +261,27 @@ void OutputManager::WriteMeshFiles_(const std::size_t step) {
 // Write output time files for mesh
 // ----------------------------------------------------------------------------
 void OutputManager::WriteMeshFilesTime_() {
-    ;  // TODO
+    // Only write pvd on root
+    if (rank_ == 0) {
+        // Output filename
+        const std::string filename_pvd = output_dir_name_ + "mesh.pvd";
+
+        // Place to hold each timestep's filename
+        std::vector<std::string> piece_filenames(steps_);
+
+        // Loop each output step and save file name
+        for (std::size_t s = 0; s < steps_; ++s) {
+            // String padding for output step
+            std::string s_str = std::to_string(s * output_step_);
+            Utilities::PadString(s_str, step_padding_);
+
+            // Save name
+            piece_filenames[s] = "mesh_step" + s_str + ".pvtu";
+        }
+
+        // Write time file
+        vtk_writer_mesh_->WriteTime(filename_pvd, piece_filenames);
+    }
 
 }  // OutputManager::WriteMeshFilesTime_
 
@@ -254,7 +307,7 @@ void OutputManager::WriteParticlesFiles_(const std::size_t step) {
     // Ensure each `.vtu` is written before `.pvtu` is written
     MPIUtilities::Barrier();
 
-    // Only write ptvu on root
+    // Only write pvtu on root
     if (rank_ == 0) {
         // Output filename
         const std::string filename_pvtu =
@@ -275,7 +328,7 @@ void OutputManager::WriteParticlesFiles_(const std::size_t step) {
         }
 
         // Write parallel file
-        vtk_writer_field_->WriteParallel(filename_pvtu, piece_filenames);
+        vtk_writer_particles_->WriteParallel(filename_pvtu, piece_filenames);
     }
 
 }  // OutputManager::WriteParticlesFiles_
@@ -284,7 +337,27 @@ void OutputManager::WriteParticlesFiles_(const std::size_t step) {
 // Write output time files for particles
 // ----------------------------------------------------------------------------
 void OutputManager::WriteParticlesFilesTime_() {
-    ;  // TODO
+    // Only write pvd on root
+    if (rank_ == 0) {
+        // Output filename
+        const std::string filename_pvd = output_dir_name_ + "particles.pvd";
+
+        // Place to hold each timestep's filename
+        std::vector<std::string> piece_filenames(steps_);
+
+        // Loop each output step and save file name
+        for (std::size_t s = 0; s < steps_; ++s) {
+            // String padding for output step
+            std::string s_str = std::to_string(s * output_step_);
+            Utilities::PadString(s_str, step_padding_);
+
+            // Save name
+            piece_filenames[s] = "particles_step" + s_str + ".pvtu";
+        }
+
+        // Write time file
+        vtk_writer_particles_->WriteTime(filename_pvd, piece_filenames);
+    }
 
 }  // OutputManager::WriteParticlesFilesTime_
 

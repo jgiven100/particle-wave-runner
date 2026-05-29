@@ -268,7 +268,24 @@ void VTKWriterField::WriteTime_(
         Utilities::PrintErrorOnRoot(error_message.str());
     }
 
-    // TODO
+    // Header
+    out << R"(<?xml version="1.0"?>)" << "\n";
+    out << R"(<VTKFile type="Collection" )";
+    out << R"(version="0.1" byte_order="LittleEndian">)" << "\n";
+
+    // Start Collection
+    out << R"(  <Collection>)" << "\n";
+
+    // List pieces
+    for (std::size_t p = 0; p < piece_filenames.size(); ++p) {
+        const auto &pname = piece_filenames[p];
+        out << "    <DataSet timestep=\"" << p
+            << "\" group=\"\" part=\"0\" file=\"" << pname << "\"/>\n";
+    }
+
+    // Footer
+    out << R"(  </Collection>)" << "\n";
+    out << R"(</VTKFile>)" << "\n";
 
     // Close file
     out.close();
