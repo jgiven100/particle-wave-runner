@@ -76,7 +76,7 @@ void VTKWriterField::InitializeWriter_() {
     const std::size_t num_elem_partition = mesh_->GetNumElemPartition();
 
     // Map for right-hand rule ordering (gmsh and vtk)
-    std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
+    static constexpr std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
 
     // Sanity check: connectivity array has enough nodes for the partition
     // elements (could be more due to ghost elements)

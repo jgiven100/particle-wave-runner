@@ -1,8 +1,10 @@
 #ifndef VTK_WRITER_MESH_H
 #define VTK_WRITER_MESH_H
 
+#include <vtkIntArray.h>
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
 #include <cassert>
@@ -29,9 +31,14 @@ class VTKWriterMesh : public VTKWriterBase {
     // Constructor
     // ------------------------------------------------------------------------
     VTKWriterMesh(const std::shared_ptr<const pwr::MeshBase>& mesh)
-        : mesh_(mesh) {
-        // Sanity check: pointer to mesh is not null
+        : mesh_(mesh),
+          rank_array_(vtkSmartPointer<vtkIntArray>::New()),
+          ghost_array_(vtkSmartPointer<vtkUnsignedCharArray>::New()) {
+        // Sanity check: pointers to mesh, rank_array_, ghost_array_ are not
+        // null
         assert(mesh_);
+        assert(rank_array_);
+        assert(ghost_array_);
 
         Setup_();
     }
@@ -116,6 +123,8 @@ class VTKWriterMesh : public VTKWriterBase {
     // Setup vtk writer for mesh
     // Calls:
     //   InitializeWriter_()
+    //   SetRankArray_()
+    //   SetGhostArray_()
     //   CheckSetup_()
     // ------------------------------------------------------------------------
     void Setup_();
@@ -124,6 +133,16 @@ class VTKWriterMesh : public VTKWriterBase {
     // Initialize vtk writer for mesh
     // ------------------------------------------------------------------------
     void InitializeWriter_();
+
+    // ------------------------------------------------------------------------
+    // Set rank array
+    // ------------------------------------------------------------------------
+    void SetRankArray_();
+
+    // ------------------------------------------------------------------------
+    // Set ghost array
+    // ------------------------------------------------------------------------
+    void SetGhostArray_();
 
     // ------------------------------------------------------------------------
     // Check setup
@@ -159,6 +178,12 @@ class VTKWriterMesh : public VTKWriterBase {
 
     // Smart vtk pointer to grid
     vtkSmartPointer<vtkUnstructuredGrid> grid_;
+
+    // Rank array
+    vtkSmartPointer<vtkIntArray> rank_array_;
+
+    // Ghost array
+    vtkSmartPointer<vtkUnsignedCharArray> ghost_array_;
 };
 
 }  // namespace pwr

@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "mesh.h"
 #include "particle_base.h"
 #include "utilities.h"
 #include "vtk_writer_base.h"
@@ -82,7 +81,7 @@ class VTKWriterParticles : public VTKWriterBase {
         const std::vector<std::shared_ptr<pwr::ParticleBase>>& particles,
         const std::string& particles_name) override {
         // `Setup_` is *not* called by consturctor for particle writer
-        // assert(setup_complete_);
+        assert(!setup_complete_);
         particles_ = particles;
         particles_name_ = particles_name;
     }

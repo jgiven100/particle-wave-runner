@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "field.h"
-#include "mesh.h"
 #include "utilities.h"
 #include "vtk_writer_base.h"
 

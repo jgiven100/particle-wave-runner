@@ -31,6 +31,8 @@ namespace pwr {
 // ----------------------------------------------------------------------------
 void VTKWriterMesh::Setup_() {
     InitializeWriter_();
+    SetRankArray_();
+    SetGhostArray_();
     CheckSetup_();
 
 }  // VTKWriterMesh::Setup_
@@ -76,7 +78,7 @@ void VTKWriterMesh::InitializeWriter_() {
     const std::size_t num_elem_total = mesh_->GetNumElemTotal();
 
     // Map for right-hand rule ordring (gmsh and vtk)
-    std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
+    static constexpr std::array<int, 8> vtk_ordering{0, 1, 3, 2, 4, 5, 7, 6};
 
     // Sanity check: connectivity array has 8 nodes per element
     assert(conn.size() == 8 * num_elem_total);
@@ -107,6 +109,57 @@ void VTKWriterMesh::InitializeWriter_() {
 }  // VTKWriterMesh::InitializeWriter_
 
 // ----------------------------------------------------------------------------
+// Set rank array
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::SetRankArray_() {
+    // Set the number of elements
+    const std::size_t num_elem_total = mesh_->GetNumElemTotal();
+
+    // Grab rank
+    const int rank = MPIUtilities::Rank();
+
+    // Set array to save rank info
+    rank_array_->SetName("rank");
+    rank_array_->SetNumberOfTuples(num_elem_total);
+
+    // Loop partition and ghost elements
+    for (std::size_t e = 0; e < num_elem_total; ++e) {
+        rank_array_->SetValue(e, rank);
+    }
+
+}  // VTKWriterMesh::SetRankArray_
+
+// ----------------------------------------------------------------------------
+// Set ghost array
+// ----------------------------------------------------------------------------
+void VTKWriterMesh::SetGhostArray_() {
+    // Set the number of elements
+    const std::size_t num_elem_total = mesh_->GetNumElemTotal();
+
+    // Set the number of partition elements and ghost elements
+    const std::size_t num_elem_partition = mesh_->GetNumElemPartition();
+    const std::size_t num_elem_ghost = mesh_->GetNumElemGhost();
+
+    // Sanity check: partition plus ghost elements equals total elements
+    assert(num_elem_total == num_elem_partition + num_elem_ghost);
+
+    // Set array to save ghost info
+    ghost_array_->SetName(vtkDataSetAttributes::GhostArrayName());
+    ghost_array_->SetNumberOfTuples(num_elem_total);
+
+    // Loop partition elements
+    for (std::size_t e = 0; e < num_elem_partition; ++e) {
+        ghost_array_->SetValue(e, 0);
+    }
+
+    // Loop ghost elements
+    for (std::size_t e = num_elem_partition; e < num_elem_total; ++e) {
+        ghost_array_->SetValue(e, vtkDataSetAttributes::DUPLICATECELL);
+    }
+
+}  // VTKWriterMesh::SetGhostArray_
+
+// ----------------------------------------------------------------------------
 // Check setup
 // ----------------------------------------------------------------------------
 void VTKWriterMesh::CheckSetup_() {
@@ -123,57 +176,11 @@ void VTKWriterMesh::Write_(const std::string &filename) const {
     auto cell_data = grid_->GetCellData();
     cell_data->Initialize();
 
-    // Set the number of elements
-    const std::size_t num_elem_total = mesh_->GetNumElemTotal();
+    // Attach rank array to grid
+    cell_data->AddArray(rank_array_);
 
-    // ------------------------------------------------------------------------
-    // Save rank
-    // ------------------------------------------------------------------------
-
-    // Grab rank
-    const int rank = MPIUtilities::Rank();
-
-    // Create array to save rank info
-    auto rank_array = vtkSmartPointer<vtkIntArray>::New();
-    rank_array->SetName("rank");
-    rank_array->SetNumberOfTuples(num_elem_total);
-
-    // Loop partition and ghost elements
-    for (std::size_t e = 0; e < num_elem_total; ++e) {
-        rank_array->SetValue(e, rank);
-    }
-
-    // Attach array to grid
-    cell_data->AddArray(rank_array);
-
-    // ------------------------------------------------------------------------
-    // Save ghost
-    // ------------------------------------------------------------------------
-
-    // Set the number of partition elements and ghost elements
-    const std::size_t num_elem_partition = mesh_->GetNumElemPartition();
-    const std::size_t num_elem_ghost = mesh_->GetNumElemGhost();
-
-    // Sanity check: partition plus ghost elements equals total elements
-    assert(num_elem_total == num_elem_partition + num_elem_ghost);
-
-    // Create array to save ghost info
-    auto ghost_array = vtkSmartPointer<vtkUnsignedCharArray>::New();
-    ghost_array->SetName(vtkDataSetAttributes::GhostArrayName());
-    ghost_array->SetNumberOfTuples(num_elem_total);
-
-    // Loop partition elements
-    for (std::size_t e = 0; e < num_elem_partition; ++e) {
-        ghost_array->SetValue(e, 0);
-    }
-
-    // Loop ghost elements
-    for (std::size_t e = num_elem_partition; e < num_elem_total; ++e) {
-        ghost_array->SetValue(e, vtkDataSetAttributes::DUPLICATECELL);
-    }
-
-    // Attach array to grid
-    cell_data->AddArray(ghost_array);
+    // Attach ghost array to grid
+    cell_data->AddArray(ghost_array_);
 
     // ------------------------------------------------------------------------
     // Write

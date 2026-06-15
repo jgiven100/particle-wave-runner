@@ -51,10 +51,10 @@ void VTKWriterParticles::InitializeWriter_() {
         const auto &particle = particles_[p];
 
         // Pointer to start of particle coordinates
-        const double *coords = &particle->GetCoordsGlobal()[0];
+        const auto &coords = particle->GetCoordsGlobal();
 
         // Set coordinates for this point
-        points_->SetPoint(p, coords);
+        points_->SetPoint(p, coords.data());
     }
 
     // Sanity check: point to points object is not null
