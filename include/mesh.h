@@ -86,6 +86,18 @@ class Mesh : public MeshBase {
         return num_nodes_active_;
     }
 
+    // Get global element indices (in each direction)
+    const std::vector<std::size_t>& GetElemIndexGlobal() const override {
+        assert(setup_complete_);
+        return elem_index_global_;
+    }
+
+    // Get global element id
+    const std::vector<std::size_t>& GetElemIdGlobal() const override {
+        assert(setup_complete_);
+        return elem_id_global_;
+    }
+
     // Get global element-wise connectivity
     const std::vector<std::size_t>& GetElemConnGlobal() const override {
         assert(setup_complete_);

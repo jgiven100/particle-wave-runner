@@ -222,6 +222,104 @@ TEST_CASE("Mesh", "[mesh]") {
     }  // Number of active nodes
 
     // ------------------------------------------------------------------------
+    // Global element index
+    // ------------------------------------------------------------------------
+    {
+        INFO("Global element index");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Loop each 3x3x3 mesh
+        for (const auto &mesh : meshes) {
+            // Grab global element indices
+            const auto &elem_index_global = mesh->GetElemIndexGlobal();
+
+            // Grab global element id
+            const auto &elem_id_global = mesh->GetElemIdGlobal();
+
+            // Loop partition + ghost elements
+            for (std::size_t e = 0; e < mesh->GetNumElemTotal(); ++e) {
+                // Set index in each direction
+                const std::size_t x_i = elem_index_global[3 * e + 0];
+                const std::size_t y_i = elem_index_global[3 * e + 1];
+                const std::size_t z_i = elem_index_global[3 * e + 2];
+
+                // -- Check if index is greater than global max ---------------
+                if (x_i >= nx) {
+                    num_failed_tests_local++;
+                }
+                if (y_i >= ny) {
+                    num_failed_tests_local++;
+                }
+                if (z_i >= nz) {
+                    num_failed_tests_local++;
+                }
+
+                // Compute expected global id
+                const std::size_t gid = x_i + nx * y_i + nx * ny * z_i;
+
+                // -- Check if calc'd id matches the saved valued -------------
+                if (gid != elem_id_global[e]) {
+                    num_failed_tests_local++;
+                }
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Global element index
+
+    // ------------------------------------------------------------------------
+    // Global element id
+    // ------------------------------------------------------------------------
+    {
+        INFO("Global element id");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Loop each 3x3x3 mesh
+        for (const auto &mesh : meshes) {
+            // Grab global element id
+            const auto &elem_id_global = mesh->GetElemIdGlobal();
+
+            // Loop each id
+            for (const auto id : elem_id_global) {
+                // -- Check if id is greater than global max ------------------
+                if (id >= nx * ny * nz) {
+                    num_failed_tests_local++;
+                }
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Global element id
+
+    // ------------------------------------------------------------------------
     // Local element connectivity
     // ------------------------------------------------------------------------
     {
