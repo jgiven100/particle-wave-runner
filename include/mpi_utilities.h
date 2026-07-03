@@ -3,6 +3,8 @@
 
 #include <mpi.h>
 
+#include <vector>
+
 namespace pwr {
 
 template <typename T>
@@ -122,6 +124,50 @@ class MPIUtilities {
     template <typename T>
     static void ReduceSum(const T& sendbuf, T& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all gather
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllGather(const T& sendbuf, std::vector<T>& recvbuf,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all gather (equal-sized vector)
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllGather(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI all gather variable
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void AllGatherV(const std::vector<T>& sendbuf,
+                           std::vector<T>& recvbuf,
+                           MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI gather
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void Gather(const T& sendbuf, std::vector<T>& recvbuf, int root,
+                       MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI gather (equal-sized vector)
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void Gather(const std::vector<T>& sendbuf, std::vector<T>& recvbuf,
+                       int root, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI gather variable
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void GatherV(const std::vector<T>& sendbuf, std::vector<T>& recvbuf,
+                        int root, MPI_Comm comm = MPI_COMM_WORLD);
 };
 
 }  // namespace pwr
