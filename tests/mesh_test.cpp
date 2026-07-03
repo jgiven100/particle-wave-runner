@@ -302,6 +302,32 @@ TEST_CASE("Mesh", "[mesh]") {
                     num_failed_tests_local++;
                 }
             }
+
+            // Grab number of partition elements
+            const std::size_t num_elem_partition = mesh->GetNumElemPartition();
+
+            // Vector with just owned element ids
+            const std::vector<std::size_t> elem_id_owned(
+                elem_id_global.begin(),
+                elem_id_global.begin() + num_elem_partition);
+
+            // Collect all rank's owned element ids
+            std::vector<std::size_t> elem_id_all;
+            pwr::MPIUtilities::AllGatherV(elem_id_owned, elem_id_all);
+
+            // -- Check if combined element ids is correct size ---------------
+            if (elem_id_all.size() != (nx * ny * nz)) {
+                num_failed_tests_local++;
+            }
+
+            // Create std::set (no repeats) for combined owned element ids
+            const std::set elem_id_all_set(elem_id_all.begin(),
+                                           elem_id_all.end());
+
+            // -- Check for duplicates in combined element ids ----------------
+            if (elem_id_all.size() != elem_id_all_set.size()) {
+                num_failed_tests_local++;
+            }
         }
 
         // Set root (rank 0)
