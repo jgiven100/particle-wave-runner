@@ -579,8 +579,8 @@ TEST_CASE("Mesh", "[mesh]") {
                 std::count(owned.begin(), owned.end(), 1);
 
             // Reduce number of owned
-            const std::size_t owned_global =
-                pwr::MPIUtilities::AllReduceSum(owned_local);
+            std::size_t owned_global;
+            pwr::MPIUtilities::AllReduceSum(owned_local, owned_global);
 
             // -- Check if sum of owned matches number active nodes -----------
             if (owned_global != total_nodes) {

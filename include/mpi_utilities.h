@@ -48,85 +48,95 @@ class MPIUtilities {
     }
 
     // ------------------------------------------------------------------------
-    // MPI all reduce
+    // MPI all reduce (scalar)
     // ------------------------------------------------------------------------
     template <typename T>
     static void AllReduce(const T& sendbuf, T& recvbuf, MPI_Op op,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce maximum
+    // MPI all reduce (vector)
     // ------------------------------------------------------------------------
     template <typename T>
-    static T AllReduceMax(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduce(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf, MPI_Op op,
+                          MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce minimum
+    // MPI all reduce (scalar) maximum
     // ------------------------------------------------------------------------
     template <typename T>
-    static T AllReduceMin(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceMax(const T& sendbuf, T& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce sum
+    // MPI all reduce (vector) maximum
     // ------------------------------------------------------------------------
     template <typename T>
-    static T AllReduceSum(const T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceMax(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce in place
+    // MPI all reduce (scalar) minimum
     // ------------------------------------------------------------------------
     template <typename T>
-    static void AllReduceInPlace(T& sendbuf, MPI_Op op,
-                                 MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceMin(const T& sendbuf, T& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce maximum in place
+    // MPI all reduce (vector) minimum
     // ------------------------------------------------------------------------
     template <typename T>
-    static void AllReduceMaxInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceMin(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce minimum in place
+    // MPI all reduce (scalar) sum
     // ------------------------------------------------------------------------
     template <typename T>
-    static void AllReduceMinInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceSum(const T& sendbuf, T& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all reduce sum in place
+    // MPI all reduce (vector) sum
     // ------------------------------------------------------------------------
     template <typename T>
-    static void AllReduceSumInPlace(T& sendbuf, MPI_Comm comm = MPI_COMM_WORLD);
+    static void AllReduceSum(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf,
+                             MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI reduce
+    // MPI reduce (scalar)
     // ------------------------------------------------------------------------
     template <typename T>
     static void Reduce(const T& sendbuf, T& recvbuf, MPI_Op op, int root,
                        MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI reduce maximum
+    // MPI reduce (scalar) maximum
     // ------------------------------------------------------------------------
     template <typename T>
     static void ReduceMax(const T& sendbuf, T& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI reduce maximum
+    // MPI reduce (scalar) maximum
     // ------------------------------------------------------------------------
     template <typename T>
     static void ReduceMin(const T& sendbuf, T& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI reduce sum
+    // MPI reduce (scalar) sum
     // ------------------------------------------------------------------------
     template <typename T>
     static void ReduceSum(const T& sendbuf, T& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all gather
+    // MPI all gather (scalar)
     // ------------------------------------------------------------------------
     template <typename T>
     static void AllGather(const T& sendbuf, std::vector<T>& recvbuf,
@@ -141,7 +151,7 @@ class MPIUtilities {
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI all gather variable
+    // MPI all gather (variable-sized vector)
     // ------------------------------------------------------------------------
     template <typename T>
     static void AllGatherV(const std::vector<T>& sendbuf,
@@ -149,7 +159,7 @@ class MPIUtilities {
                            MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI gather
+    // MPI gather (scalar)
     // ------------------------------------------------------------------------
     template <typename T>
     static void Gather(const T& sendbuf, std::vector<T>& recvbuf, int root,
@@ -163,7 +173,7 @@ class MPIUtilities {
                        int root, MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI gather variable
+    // MPI gather (variable-sized vector)
     // ------------------------------------------------------------------------
     template <typename T>
     static void GatherV(const std::vector<T>& sendbuf, std::vector<T>& recvbuf,

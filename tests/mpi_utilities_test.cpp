@@ -67,25 +67,23 @@ TEST_CASE("MPI Utilities", "[mpi]") {
     }  // MPI datatype
 
     // ------------------------------------------------------------------------
-    // MPI all reduce maximum
+    // MPI all reduce (scalar) maximum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all reduce maximum");
+        INFO("MPI all reduce (scalar) maximum");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
-        // Set global values
-        const std::array<int, 4> values = {40, 30, 20, 10};
-
-        // Grab send value for this rank
-        const int send = values[rank];
+        // Each rank sends itself
+        const int send = rank;
 
         // MPI all reduce maximum
-        const int recv = pwr::MPIUtilities::AllReduceMax(send);
+        int recv;
+        pwr::MPIUtilities::AllReduceMax(send, recv);
 
         // -- Check if recv matches solution ----------------------------------
-        if (recv != 40) {
+        if (recv != (size - 1)) {
             num_failed_tests_local++;
         }
 
@@ -102,28 +100,66 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all reduce maximum
+    }  // MPI all reduce scalar maximum
 
     // ------------------------------------------------------------------------
-    // MPI all reduce minimum
+    // MPI all reduce (vector) maximum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all reduce minimum");
+        INFO("MPI all reduce (vector) maximum");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
-        // Set global values
-        const std::array<int, 4> values = {10, 20, 30, 40};
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
 
-        // Grab send value for this rank
-        const int send = values[rank];
+        // MPI all reduce maximum
+        std::vector<int> recv;
+        pwr::MPIUtilities::AllReduceMax(send, recv);
+
+        // Loop each element
+        for (std::size_t i = 0; i < recv.size(); ++i) {
+            // -- Check if recv matches solution ------------------------------
+            if (recv[i] != (size - 1 + i)) {
+                num_failed_tests_local++;
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // MPI all reduce (vector) maximum
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce (scalar) minimum
+    // ------------------------------------------------------------------------
+    {
+        INFO("MPI all reduce (scalar) minimum");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Each rank sends itself
+        const int send = rank;
 
         // MPI all reduce minimum
-        const int recv = pwr::MPIUtilities::AllReduceMin(send);
+        int recv;
+        pwr::MPIUtilities::AllReduceMin(send, recv);
 
         // -- Check if recv matches solution ----------------------------------
-        if (recv != 10) {
+        if (recv != 0) {
             num_failed_tests_local++;
         }
 
@@ -140,28 +176,72 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all reduce minimum
+    }  // MPI all reduce (scalar) minimum
 
     // ------------------------------------------------------------------------
-    // MPI all reduce sum
+    // MPI all reduce (vector) minimum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all reduce sum");
+        INFO("MPI all reduce (vector) minimum");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
-        // Set global solution
-        const std::array<int, 4> solutions = {10, 20, 30, 40};
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
 
-        // Set send value for all ranks
-        const int send = 10;
+        // MPI all reduce maximum
+        std::vector<int> recv;
+        pwr::MPIUtilities::AllReduceMin(send, recv);
+
+        // Loop each element
+        for (std::size_t i = 0; i < recv.size(); ++i) {
+            // -- Check if recv matches solution ------------------------------
+            if (recv[i] != i) {
+                num_failed_tests_local++;
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // MPI all reduce (vector) minimum
+
+    // ------------------------------------------------------------------------
+    // MPI all reduce (scalar) sum
+    // ------------------------------------------------------------------------
+    {
+        INFO("MPI all reduce (scalar) sum");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Each rank sends itself
+        const int send = rank;
 
         // MPI all reduce sum
-        const int recv = pwr::MPIUtilities::AllReduceSum(send);
+        int recv;
+        pwr::MPIUtilities::AllReduceSum(send, recv);
+
+        // Expected solution
+        int expected = 0;
+        for (int r = 0; r < size; ++r) {
+            expected += r;
+        }
 
         // -- Check if recv matches solution ----------------------------------
-        if (recv != solutions[size - 1]) {
+        if (recv != expected) {
             num_failed_tests_local++;
         }
 
@@ -178,29 +258,39 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all reduce sum
+    }  // MPI all reduce (scalar) sum
 
     // ------------------------------------------------------------------------
-    // MPI all reduce maximum in place
+    // MPI all reduce (vector) sum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all reduce maximum in place");
+        INFO("MPI all reduce (vector) sum");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
-        // Set global values
-        const std::array<int, 4> values = {40, 30, 20, 10};
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
 
-        // Grab send/recv for this rank
-        int value = values[rank];
+        // MPI all reduce sum
+        std::vector<int> recv;
+        pwr::MPIUtilities::AllReduceSum(send, recv);
 
-        // MPI all reduce maximum in place
-        pwr::MPIUtilities::AllReduceMaxInPlace(value);
+        // Expected solution
+        std::vector<int> expected = {0, 0, 0};
+        for (int r = 0; r < size; ++r) {
+            expected[0] += r + 0;
+            expected[1] += r + 1;
+            expected[2] += r + 2;
+        }
 
-        // -- Check if send/recv matches solution -----------------------------
-        if (value != 40) {
-            num_failed_tests_local++;
+        // Loop each element
+        for (std::size_t i = 0; i < recv.size(); ++i) {
+            // -- Check if recv matches solution ------------------------------
+            if (recv[i] != expected[i]) {
+                num_failed_tests_local++;
+            }
         }
 
         // Set root (rank 0)
@@ -216,141 +306,59 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all reduce maximum in place
+    }  // MPI all reduce (vector) sum
 
     // ------------------------------------------------------------------------
-    // MPI all reduce minimum in place
-    // ------------------------------------------------------------------------
-    {
-        INFO("MPI all reduce minimum in place");
-
-        // Keep track of failed tests on this rank
-        int num_failed_tests_local = 0;
-
-        // Set global values
-        const std::array<int, 4> values = {10, 20, 30, 40};
-
-        // Grab send/recv value for this rank
-        int value = values[rank];
-
-        // MPI all reduce minimum in place
-        pwr::MPIUtilities::AllReduceMinInPlace(value);
-
-        // -- Check if send/recv matches solution -----------------------------
-        if (value != 10) {
-            num_failed_tests_local++;
-        }
-
-        // Set root (rank 0)
-        const int root = 0;
-
-        // Collect results
-        int num_failed_tests_global;
-        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
-                                     num_failed_tests_global, root);
-
-        // Only check on root (rank 0)
-        if (rank == root) {
-            REQUIRE(num_failed_tests_global == 0);
-        }
-
-    }  // MPI all reduce minimum in place
-
-    // ------------------------------------------------------------------------
-    // MPI all reduce sum in place
+    // MPI reduce maximum (scalar)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all reduce sum in place");
+        INFO("MPI reduce maximum (scalar)");
 
-        // Keep track of failed tests on this rank
-        int num_failed_tests_local = 0;
-
-        // Set global solution
-        const std::array<int, 4> values = {10, 20, 30, 40};
-
-        // Set send/recv for all ranks
-        int value = 10;
-
-        // MPI all reduce sum in place
-        pwr::MPIUtilities::AllReduceSumInPlace(value);
-
-        // -- Check if send/recv matches solution -----------------------------
-        if (value != values[size - 1]) {
-            num_failed_tests_local++;
-        }
-
-        // Set root (rank 0)
-        const int root = 0;
-
-        // Collect results
-        int num_failed_tests_global;
-        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
-                                     num_failed_tests_global, root);
-
-        // Only check on root (rank 0)
-        if (rank == root) {
-            REQUIRE(num_failed_tests_global == 0);
-        }
-
-    }  // MPI all reduce sum in place
-
-    // ------------------------------------------------------------------------
-    // MPI reduce maximum
-    // ------------------------------------------------------------------------
-    {
-        INFO("MPI reduce maximum");
-
-        // Set global values
-        const std::array<int, 4> values = {40, 30, 20, 10};
-
-        // Grab send value for this rank
-        const int send = values[rank];
+        // Each rank sends itself
+        const int send = rank;
 
         // Set root (rank 0)
         const int root = 0;
 
         // MPI reduce maximum
-        int recv = 0;
+        int recv;
         pwr::MPIUtilities::ReduceMax(send, recv, root);
 
         // Only check on root (rank 0)
         if (rank == root) {
-            REQUIRE(recv == 40);
+            REQUIRE(recv == (size - 1));
         }
 
-    }  // MPI reduce maximum
+    }  // MPI reduce maximum (scalar)
 
     // ------------------------------------------------------------------------
-    // MPI reduce minimum
+    // MPI reduce minimum (scalar)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI reduce minimum");
+        INFO("MPI reduce minimum (scalar)");
 
-        // Set global values
-        const std::array<int, 4> values = {10, 20, 30, 40};
-
-        // Grab send value for this rank
-        const int send = values[rank];
+        // Each rank send itself
+        const int send = rank;
 
         // Set root (rank 0)
         const int root = 0;
 
         // MPI reduce minimum
-        int recv = 0;
+        int recv;
         pwr::MPIUtilities::ReduceMin(send, recv, root);
 
         // Only check on root (rank 0)
         if (rank == root) {
-            REQUIRE(recv == 10);
+            REQUIRE(recv == 0);
         }
 
-    }  // MPI reduce minimum
+    }  // MPI reduce minimum (scalar)
 
     // ------------------------------------------------------------------------
-    // MPI reduce sum
+    // MPI reduce (scalar) sum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI reduce sum");
+        INFO("MPI reduce (scalar) sum");
 
         // Set global solution
         const std::array<int, 4> values = {10, 20, 30, 40};
@@ -362,7 +370,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         const int root = 0;
 
         // MPI reduce sum
-        int recv = 0;
+        int recv;
         pwr::MPIUtilities::ReduceSum(send, recv, root);
 
         // Only check on root (rank 0)
@@ -370,13 +378,13 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(recv == values[size - 1]);
         }
 
-    }  // MPI reduce sum
+    }  // MPI reduce (scalar) sum
 
     // ------------------------------------------------------------------------
-    // MPI all gather
+    // MPI all gather (scalar)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all gather");
+        INFO("MPI all gather (scalar)");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
@@ -398,7 +406,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Loop each rank
         for (int i = 0; i < size; ++i) {
             // -- Check if recv value matches solution ------------------------
-            if (i != recv[i]) {
+            if (recv[i] != i) {
                 num_failed_tests_local++;
             }
         }
@@ -416,7 +424,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all gather
+    }  // MPI all gather (scalar)
 
     // ------------------------------------------------------------------------
     // MPI all gather (equal-sized vector)
@@ -445,10 +453,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Loop each rank
         for (int i = 0; i < size; ++i) {
             // -- Check if recv value matches solution ------------------------
-            if (i != recv[2 * i + 0]) {
+            if (recv[2 * i + 0] != i) {
                 num_failed_tests_local++;
             }
-            if ((i + 100) != recv[2 * i + 1]) {
+            if (recv[2 * i + 1] != (i + 100)) {
                 num_failed_tests_local++;
             }
         }
@@ -469,10 +477,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
     }  // MPI all gather (equal-sized vector)
 
     // ------------------------------------------------------------------------
-    // MPI all gather variable
+    // MPI all gather (variable-sized vector)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI all gather variable");
+        INFO("MPI all gather (variable-sized vector)");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
@@ -523,13 +531,13 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // MPI all gather variable
+    }  // MPI all gather (variable-sized vector)
 
     // ------------------------------------------------------------------------
-    // MPI gather
+    // MPI gather (scalar)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI gather");
+        INFO("MPI gather (scalar)");
 
         // Each rank sends itself
         const int send = rank;
@@ -554,7 +562,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             // Loop each rank
             for (int i = 0; i < size; ++i) {
                 // -- Check if recv value matches solution --------------------
-                if (i != recv[i]) {
+                if (recv[i] != i) {
                     num_failed_tests_local++;
                 }
             }
@@ -563,7 +571,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_local == 0);
         }
 
-    }  // MPI gather
+    }  // MPI gather (scalar)
 
     // ------------------------------------------------------------------------
     // MPI gather (equal-sized vector)
@@ -595,10 +603,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             // Loop each rank
             for (int i = 0; i < size; ++i) {
                 // -- Check if recv value matches solution --------------------
-                if (i != recv[2 * i + 0]) {
+                if (recv[2 * i + 0] != i) {
                     num_failed_tests_local++;
                 }
-                if ((i + 100) != recv[2 * i + 1]) {
+                if (recv[2 * i + 1] != (i + 100)) {
                     num_failed_tests_local++;
                 }
             }
@@ -610,10 +618,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
     }  // MPI gather (equal-sized vector)
 
     // ------------------------------------------------------------------------
-    // MPI gather variable
+    // MPI gather (variable-sized vector)
     // ------------------------------------------------------------------------
     {
-        INFO("MPI gather variable");
+        INFO("MPI gather (variable-sized vector)");
 
         // Each rank sends variable length vector
         std::vector<int> send(rank + 1);
@@ -658,6 +666,6 @@ TEST_CASE("MPI Utilities", "[mpi]") {
             REQUIRE(num_failed_tests_local == 0);
         }
 
-    }  // MPI gather variable
+    }  // MPI gather (variable-sized vector)
 
 }  // TEST_CASE("MPI Utilities")
