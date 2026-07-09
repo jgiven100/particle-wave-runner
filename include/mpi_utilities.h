@@ -115,6 +115,13 @@ class MPIUtilities {
                        MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
+    // MPI reduce (vector)
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void Reduce(const std::vector<T>& sendbuf, std::vector<T>& recvbuf,
+                       MPI_Op op, int root, MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
     // MPI reduce (scalar) maximum
     // ------------------------------------------------------------------------
     template <typename T>
@@ -122,10 +129,26 @@ class MPIUtilities {
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
-    // MPI reduce (scalar) maximum
+    // MPI reduce (vector) maximum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceMax(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (scalar) minimum
     // ------------------------------------------------------------------------
     template <typename T>
     static void ReduceMin(const T& sendbuf, T& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (vector) minimum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceMin(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------
@@ -133,6 +156,14 @@ class MPIUtilities {
     // ------------------------------------------------------------------------
     template <typename T>
     static void ReduceSum(const T& sendbuf, T& recvbuf, int root,
+                          MPI_Comm comm = MPI_COMM_WORLD);
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (vector) sum
+    // ------------------------------------------------------------------------
+    template <typename T>
+    static void ReduceSum(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf, int root,
                           MPI_Comm comm = MPI_COMM_WORLD);
 
     // ------------------------------------------------------------------------

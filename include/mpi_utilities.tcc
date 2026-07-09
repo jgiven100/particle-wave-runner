@@ -83,8 +83,7 @@ void MPIUtilities::AllReduce(const std::vector<T>& sendbuf,
     static_assert(std::is_trivially_copyable_v<T>,
                   "MPI_Allreduce requires trivially copyable type");
 
-    // Get size
-    int size = Size(comm);
+    // Get sendbuf size
     int local_n = static_cast<int>(sendbuf.size());
 
     // Collect min and max vector sizes
@@ -155,7 +154,8 @@ void MPIUtilities::AllReduceMin(const std::vector<T>& sendbuf,
                                 std::vector<T>& recvbuf, MPI_Comm comm) {
     // Call `AllReduce` with MPI_MIN
     AllReduce(sendbuf, recvbuf, MPI_MIN, comm);
-}
+
+}  // MPIUtilities::AllReduceMin
 
 // ----------------------------------------------------------------------------
 // MPI all reduce (scalar) sum
@@ -205,11 +205,66 @@ void MPIUtilities::Reduce(const T& sendbuf, T& recvbuf, MPI_Op op, int root,
 }  // MPIUtilities::Reduce
 
 // ----------------------------------------------------------------------------
+// MPI reduce (vector)
+// ----------------------------------------------------------------------------
+template <typename T>
+void MPIUtilities::Reduce(const std::vector<T>& sendbuf,
+                          std::vector<T>& recvbuf, MPI_Op op, int root,
+                          MPI_Comm comm) {
+    // Sanity check: compatible MPI_Reduce type
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "MPI_Reduce requires trivially copyable type");
+
+    // Get sendbuf size
+    int local_n = static_cast<int>(sendbuf.size());
+
+    // Collect min and max vector sizes
+    int min_n;
+    AllReduceMin(local_n, min_n, comm);
+    int max_n;
+    AllReduceMax(local_n, max_n, comm);
+
+    // Check for equal-sized vectors across all ranks
+    if (min_n != max_n) {
+        MPI_Abort(comm, MPI_ERR_INTERN);
+    }
+
+    // Resize recvbuf
+    recvbuf.resize(local_n);
+
+    int err = MPI_Reduce(       // Reduce
+        sendbuf.data(),         // Send buffer
+        recvbuf.data(),         // Receive buffer
+        local_n,                // Count
+        pwr::MPIType<T>::type,  // MPI datatype
+        op,                     // MPI operation
+        root,                   // Root
+        comm);                  // MPI communicator
+
+    // Check for successful MPI_Reduce
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(comm, err);
+    }
+
+}  // MPIUtilities::Reduce
+
+// ----------------------------------------------------------------------------
 // MPI reduce (scalar) maximum
 // ----------------------------------------------------------------------------
 template <typename T>
 void MPIUtilities::ReduceMax(const T& sendbuf, T& recvbuf, int root,
                              MPI_Comm comm) {
+    // Call `Reduce` with MPI_MAX
+    Reduce(sendbuf, recvbuf, MPI_MAX, root, comm);
+
+}  // MPIUtilities::ReduceMax
+
+// ----------------------------------------------------------------------------
+// MPI reduce (vector) maximum
+// ----------------------------------------------------------------------------
+template <typename T>
+void MPIUtilities::ReduceMax(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf, int root, MPI_Comm comm) {
     // Call `Reduce` with MPI_MAX
     Reduce(sendbuf, recvbuf, MPI_MAX, root, comm);
 
@@ -227,11 +282,33 @@ void MPIUtilities::ReduceMin(const T& sendbuf, T& recvbuf, int root,
 }  // MPIUtilities::ReduceMin
 
 // ----------------------------------------------------------------------------
+// MPI reduce (vector) minimum
+// ----------------------------------------------------------------------------
+template <typename T>
+void MPIUtilities::ReduceMin(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf, int root, MPI_Comm comm) {
+    // Call `Reduce` with MPI_MIN
+    Reduce(sendbuf, recvbuf, MPI_MIN, root, comm);
+
+}  // MPIUtilities::ReduceMin
+
+// ----------------------------------------------------------------------------
 // MPI reduce (scalar) sum
 // ----------------------------------------------------------------------------
 template <typename T>
 void MPIUtilities::ReduceSum(const T& sendbuf, T& recvbuf, int root,
                              MPI_Comm comm) {
+    // Call `Reduce` with MPI_SUM
+    Reduce(sendbuf, recvbuf, MPI_SUM, root, comm);
+
+}  // MPIUtilities::ReduceSum
+
+// ----------------------------------------------------------------------------
+// MPI reduce (vector) sum
+// ----------------------------------------------------------------------------
+template <typename T>
+void MPIUtilities::ReduceSum(const std::vector<T>& sendbuf,
+                             std::vector<T>& recvbuf, int root, MPI_Comm comm) {
     // Call `Reduce` with MPI_SUM
     Reduce(sendbuf, recvbuf, MPI_SUM, root, comm);
 

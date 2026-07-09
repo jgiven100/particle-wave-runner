@@ -78,8 +78,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Each rank sends itself
         const int send = rank;
 
-        // MPI all reduce maximum
+        // Buffer to receive
         int recv;
+
+        // MPI all reduce maximum
         pwr::MPIUtilities::AllReduceMax(send, recv);
 
         // -- Check if recv matches solution ----------------------------------
@@ -95,7 +97,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -115,8 +117,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         const int base = rank;
         const std::vector<int> send = {base, base + 1, base + 2};
 
-        // MPI all reduce maximum
+        // Buffer to receive
         std::vector<int> recv;
+
+        // MPI all reduce maximum
         pwr::MPIUtilities::AllReduceMax(send, recv);
 
         // Loop each element
@@ -135,7 +139,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -154,8 +158,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Each rank sends itself
         const int send = rank;
 
-        // MPI all reduce minimum
+        // Buffer to receive
         int recv;
+
+        // MPI all reduce minimum
         pwr::MPIUtilities::AllReduceMin(send, recv);
 
         // -- Check if recv matches solution ----------------------------------
@@ -171,7 +177,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -191,8 +197,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         const int base = rank;
         const std::vector<int> send = {base, base + 1, base + 2};
 
-        // MPI all reduce maximum
+        // Buffer to receive
         std::vector<int> recv;
+
+        // MPI all reduce minimum
         pwr::MPIUtilities::AllReduceMin(send, recv);
 
         // Loop each element
@@ -211,7 +219,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -230,8 +238,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Each rank sends itself
         const int send = rank;
 
-        // MPI all reduce sum
+        // Buffer to receive
         int recv;
+
+        // MPI all reduce sum
         pwr::MPIUtilities::AllReduceSum(send, recv);
 
         // Expected solution
@@ -253,7 +263,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -273,8 +283,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         const int base = rank;
         const std::vector<int> send = {base, base + 1, base + 2};
 
-        // MPI all reduce sum
+        // Buffer to receive
         std::vector<int> recv;
+
+        // MPI all reduce sum
         pwr::MPIUtilities::AllReduceSum(send, recv);
 
         // Expected solution
@@ -301,7 +313,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -309,50 +321,130 @@ TEST_CASE("MPI Utilities", "[mpi]") {
     }  // MPI all reduce (vector) sum
 
     // ------------------------------------------------------------------------
-    // MPI reduce maximum (scalar)
+    // MPI reduce (scalar) maximum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI reduce maximum (scalar)");
+        INFO("MPI reduce (scalar) maximum ");
 
         // Each rank sends itself
         const int send = rank;
+
+        // Buffer to receive
+        int recv;
 
         // Set root (rank 0)
         const int root = 0;
 
         // MPI reduce maximum
-        int recv;
         pwr::MPIUtilities::ReduceMax(send, recv, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(recv == (size - 1));
         }
 
-    }  // MPI reduce maximum (scalar)
+    }  // MPI reduce (scalar) maximum
 
     // ------------------------------------------------------------------------
-    // MPI reduce minimum (scalar)
+    // MPI reduce (vector) maximum
     // ------------------------------------------------------------------------
     {
-        INFO("MPI reduce minimum (scalar)");
+        INFO("MPI reduce (vector) maximum");
 
-        // Each rank send itself
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
+
+        // Buffer to receive
+        std::vector<int> recv;
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // MPI reduce maximum
+        pwr::MPIUtilities::ReduceMax(send, recv, root);
+
+        // Only check on root
+        if (rank == root) {
+            // Keep track of failed tests on this rank
+            int num_failed_tests_local = 0;
+
+            // Loop recv vector
+            for (int i = 0; i < recv.size(); ++i) {
+                // -- Check if recv value matches expected --------------------
+                if (recv[i] != (size - 1 + i)) {
+                    num_failed_tests_local++;
+                }
+            }
+
+            // Only check on root
+            REQUIRE(num_failed_tests_local == 0);
+        }
+
+    }  // MPI reduce (vector) maximum
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (scalar) minimum
+    // ------------------------------------------------------------------------
+    {
+        INFO("MPI reduce (scalar) minimum");
+
+        // Each rank sends itself
         const int send = rank;
+
+        // Buffer to receive
+        int recv;
 
         // Set root (rank 0)
         const int root = 0;
 
         // MPI reduce minimum
-        int recv;
         pwr::MPIUtilities::ReduceMin(send, recv, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(recv == 0);
         }
 
-    }  // MPI reduce minimum (scalar)
+    }  // MPI reduce (scalar) minimum
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (vector) minimum
+    // ------------------------------------------------------------------------
+    {
+        INFO("MPI reduce (vector) minimum");
+
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
+
+        // Buffer to receive
+        std::vector<int> recv;
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // MPI reduce minimum
+        pwr::MPIUtilities::ReduceMin(send, recv, root);
+
+        // Only check on root
+        if (rank == root) {
+            // Keep track of failed tests on this rank
+            int num_failed_tests_local = 0;
+
+            // Loop recv vector
+            for (int i = 0; i < recv.size(); ++i) {
+                // -- Check if recv value matches expected --------------------
+                if (recv[i] != i) {
+                    num_failed_tests_local++;
+                }
+            }
+
+            // Only check on root
+            REQUIRE(num_failed_tests_local == 0);
+        }
+
+    }  // MPI reduce (vector) minimum
 
     // ------------------------------------------------------------------------
     // MPI reduce (scalar) sum
@@ -360,25 +452,77 @@ TEST_CASE("MPI Utilities", "[mpi]") {
     {
         INFO("MPI reduce (scalar) sum");
 
-        // Set global solution
-        const std::array<int, 4> values = {10, 20, 30, 40};
+        // Each rank sends itself
+        const int send = rank;
 
-        // Set send for all ranks
-        const int send = 10;
+        // Buffer to receive
+        int recv;
 
         // Set root (rank 0)
         const int root = 0;
 
         // MPI reduce sum
-        int recv;
         pwr::MPIUtilities::ReduceSum(send, recv, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
-            REQUIRE(recv == values[size - 1]);
+            // Expected solution
+            int expected = 0;
+            for (int r = 0; r < size; ++r) {
+                expected += r;
+            }
+
+            // Only check on root
+            REQUIRE(recv == expected);
         }
 
     }  // MPI reduce (scalar) sum
+
+    // ------------------------------------------------------------------------
+    // MPI reduce (vector) sum
+    // ------------------------------------------------------------------------
+    {
+        INFO("MPI reduce (vector) sum");
+
+        // Each rank sends {itself, itself + offset, ...}
+        const int base = rank;
+        const std::vector<int> send = {base, base + 1, base + 2};
+
+        // Buffer to receive
+        std::vector<int> recv;
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // MPI reduce sum
+        pwr::MPIUtilities::ReduceSum(send, recv, root);
+
+        // Only check on root
+        if (rank == root) {
+            // Keep track of failed tests on this rank
+            int num_failed_tests_local = 0;
+
+            // Expected solution
+            std::vector<int> expected = {0, 0, 0};
+            for (int r = 0; r < size; ++r) {
+                expected[0] += r + 0;
+                expected[1] += r + 1;
+                expected[2] += r + 2;
+            }
+
+            // Loop recv vector
+            for (int i = 0; i < recv.size(); ++i) {
+                // -- Check if recv value matches expected --------------------
+                if (recv[i] != expected[i]) {
+                    num_failed_tests_local++;
+                }
+            }
+
+            // Only check on root
+            REQUIRE(num_failed_tests_local == 0);
+        }
+
+    }  // MPI reduce (vector) sum
 
     // ------------------------------------------------------------------------
     // MPI all gather (scalar)
@@ -419,7 +563,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -469,7 +613,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -526,7 +670,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
                                      num_failed_tests_global, root);
 
-        // Only check on root (rank 0)
+        // Only check on root
         if (rank == root) {
             REQUIRE(num_failed_tests_global == 0);
         }
@@ -545,8 +689,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Buffer to receive
         std::vector<int> recv;
 
-        // MPI gather
+        // Set root (rank 0)
         const int root = 0;
+
+        // MPI gather
         pwr::MPIUtilities::Gather(send, recv, root);
 
         // Only check on root
@@ -567,7 +713,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
                 }
             }
 
-            // Only check on root (rank 0)
+            // Only check on root
             REQUIRE(num_failed_tests_local == 0);
         }
 
@@ -586,8 +732,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Buffer to receive
         std::vector<int> recv;
 
-        // MPI gather
+        // Set root (rank 0)
         const int root = 0;
+
+        // MPI gather
         pwr::MPIUtilities::Gather(send, recv, root);
 
         // Only check on root
@@ -611,7 +759,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
                 }
             }
 
-            // Only check on root (rank 0)
+            // Only check on root
             REQUIRE(num_failed_tests_local == 0);
         }
 
@@ -632,8 +780,10 @@ TEST_CASE("MPI Utilities", "[mpi]") {
         // Buffer to receive
         std::vector<int> recv;
 
-        // MPI gather variable
+        // Set root (rank 0)
         const int root = 0;
+
+        // MPI gather variable
         pwr::MPIUtilities::GatherV(send, recv, root);
 
         // Only check on root
@@ -662,7 +812,7 @@ TEST_CASE("MPI Utilities", "[mpi]") {
                 }
             }
 
-            // Only check on root (rank 0)
+            // Only check on root
             REQUIRE(num_failed_tests_local == 0);
         }
 
