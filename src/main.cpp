@@ -30,16 +30,21 @@ int main(int argc, char **argv) {
     // ------------------------------------------------------------------------
     // Generate mesh
     // ------------------------------------------------------------------------
+
+    // Set x, y, and z limits
     const double x_min = 0.;
     const double y_min = 0.;
     const double z_min = 0.;
     const double x_max = 1.;
     const double y_max = 1.;
-    const double z_max = 10.;
-    const std::size_t nx = 1;
-    const std::size_t ny = 1;
-    const std::size_t nz = 10;
+    const double z_max = 1.;
 
+    // Number of elements in each direction
+    const std::size_t nx = 4;
+    const std::size_t ny = 4;
+    const std::size_t nz = 4;
+
+    // Create mesh object for *this* partition
     const std::shared_ptr<const pwr::MeshBase> mesh =
         std::make_shared<const pwr::Mesh>(x_min, y_min, z_min, x_max, y_max,
                                           z_max, nx, ny, nz);
@@ -47,42 +52,110 @@ int main(int argc, char **argv) {
     // ------------------------------------------------------------------------
     // Generate particles
     // ------------------------------------------------------------------------
-    const double nz_double = static_cast<double>(nz);
-    const double ny_double = static_cast<double>(ny);
-    const double nx_double = static_cast<double>(nx);
 
-    std::vector<std::shared_ptr<pwr::ParticleBase>> particles;
-    std::size_t id = 0;
+    // Particles per direction per cell
+    const std::size_t n = 4;
+    const double n_double = static_cast<double>(n);
 
-    for (std::size_t nz_i = 0; nz_i < nz; ++nz_i) {
-        // Set coordinate z-direction
-        const double z_i =
-            (0.5 + static_cast<double>(nz_i)) * (z_max - z_min) / nz_double;
-        for (std::size_t ny_i = 0; ny_i < ny; ++ny_i) {
-            // Set coordinate y-direction
-            const double y_i =
-                (0.5 + static_cast<double>(ny_i)) * (y_max - y_min) / ny_double;
-            for (std::size_t nx_i = 0; nx_i < nx; ++nx_i) {
-                // Set coordinate x-direction
-                const double x_i = (0.5 + static_cast<double>(nx_i)) *
-                                   (x_max - x_min) / nx_double;
+    // Particles per element
+    const std::size_t num_particles_elem = n * n * n;
 
-                // Set coords array
-                std::array<double, 3> coords{x_i, y_i, z_i};
+    // Set element-wise (local) particle indices (per direction)
+    std::vector<std::size_t> particle_index_elem(3 * num_particles_elem, 0);
 
-                // Generate particle
-                const std::shared_ptr<pwr::ParticleBase> particle =
-                    std::make_shared<pwr::ParticlePoisson>(id, coords);
+    // Loop particles per direction
+    std::size_t p_local = 0;
+    for (std::size_t p_z_i = 0; p_z_i < n; ++p_z_i) {
+        for (std::size_t p_y_i = 0; p_y_i < n; ++p_y_i) {
+            for (std::size_t p_x_i = 0; p_x_i < n; ++p_x_i) {
+                // Save particle index per direction
+                particle_index_elem[3 * p_local + 0] = p_x_i;
+                particle_index_elem[3 * p_local + 1] = p_y_i;
+                particle_index_elem[3 * p_local + 2] = p_z_i;
 
-                // Save it to vector
-                particles.emplace_back(particle);
-
-                // Update id
-                id++;
+                // Increment
+                p_local++;
             }
         }
     }
 
+    // Compute element size
+    const double e_dx = (x_max - x_min) / static_cast<double>(nx);
+    const double e_dy = (y_max - y_min) / static_cast<double>(ny);
+    const double e_dz = (z_max - z_min) / static_cast<double>(nz);
+
+    // Compute particle size
+    const double p_dx = e_dx / n_double;
+    const double p_dy = e_dy / n_double;
+    const double p_dz = e_dz / n_double;
+
+    // Place to save list of particle objects
+    std::vector<std::shared_ptr<pwr::ParticleBase>> particles;
+
+    // Grab number of partition elements
+    const std::size_t num_elem_partition = mesh->GetNumElemPartition();
+
+    // Grab global element id
+    const std::vector<std::size_t> elem_id_global = mesh->GetElemIdGlobal();
+
+    // Grab global element indices (in each direction)
+    const std::vector<std::size_t> elem_index_global =
+        mesh->GetElemIndexGlobal();
+
+    // Loop total (partition + ghost) elements
+    for (std::size_t e = 0; e < mesh->GetNumElemTotal(); ++e) {
+        // Set ownership to `false` if particle is in ghost element
+        const bool owned = (e >= num_elem_partition) ? false : true;
+
+        // Set global element id
+        const std::size_t eid_global = elem_id_global[e];
+
+        // Set global element indices
+        const std::size_t e_x_i = elem_index_global[3 * e + 0];
+        const std::size_t e_y_i = elem_index_global[3 * e + 1];
+        const std::size_t e_z_i = elem_index_global[3 * e + 2];
+
+        // Compute element corner
+        const double e_x0 = e_dx * static_cast<double>(e_x_i);
+        const double e_y0 = e_dy * static_cast<double>(e_y_i);
+        const double e_z0 = e_dz * static_cast<double>(e_z_i);
+
+        // Loop particles per element
+        for (std::size_t p = 0; p < num_particles_elem; ++p) {
+            // Set local particle id      TODO -- local here means
+            // partition-wise
+            std::size_t pid_local = 0;  // TODO -- does this matter?
+
+            // Set global particle id
+            std::size_t pid_global = (eid_global * num_particles_elem + p);
+
+            // // Decompose into local indices in each direction
+            // const std::size_t p_x_i = p % n;
+            // const std::size_t p_y_i = (p / n) % n;
+            // const std::size_t p_z_i = p / (n * n);
+
+            // Grab element-wise (local) indices in each direction
+            const std::size_t p_x_i = particle_index_elem[3 * p + 0];
+            const std::size_t p_y_i = particle_index_elem[3 * p + 1];
+            const std::size_t p_z_i = particle_index_elem[3 * p + 2];
+
+            // Set coords array
+            const double x = e_x0 + (static_cast<double>(p_x_i) + 0.5) * p_dx;
+            const double y = e_y0 + (static_cast<double>(p_y_i) + 0.5) * p_dy;
+            const double z = e_z0 + (static_cast<double>(p_z_i) + 0.5) * p_dz;
+            std::array<double, 3> coords{x, y, z};
+
+            // Generate particle
+            const std::shared_ptr<pwr::ParticleBase> particle =
+                std::make_shared<pwr::ParticlePoisson>(pid_local, pid_global,
+                                                       owned, coords);
+
+            // Save it to vector
+            particles.emplace_back(particle);
+        }
+    }
+
+    //
     const std::string particles_name = "temperature";
 
     // ------------------------------------------------------------------------
