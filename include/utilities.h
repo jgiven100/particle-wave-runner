@@ -46,7 +46,7 @@ class Utilities {
     // ------------------------------------------------------------------------
     // Pad string
     // ------------------------------------------------------------------------
-    static void PadString(std::string &str, const int width,
+    static void PadString(std::string& str, const int width,
                           const char c = '0') {
         // Padding width should be greater or equal to string size
         if (width <= static_cast<int>(str.size())) {
@@ -61,7 +61,7 @@ class Utilities {
     // ------------------------------------------------------------------------
     // Print error on root
     // ------------------------------------------------------------------------
-    static void PrintErrorOnRoot(const std::string &str, const int root = 0) {
+    static void PrintErrorOnRoot(const std::string& str, const int root = 0) {
         // Only print on root (rank 0)
         if (pwr::MPIUtilities::Rank() == root) {
             std::cerr << "\x1b[1;31m[ERROR]\x1b[0m " << str << std::endl;
@@ -72,7 +72,7 @@ class Utilities {
     // ------------------------------------------------------------------------
     // Print info on root
     // ------------------------------------------------------------------------
-    static void PrintInfoOnRoot(const std::string &str, const int root = 0) {
+    static void PrintInfoOnRoot(const std::string& str, const int root = 0) {
         // Only print on root (rank 0)
         if (pwr::MPIUtilities::Rank() == root) {
             std::cout << "\x1b[1;32m[INFO]\x1b[0m " << str << std::endl;
@@ -83,7 +83,7 @@ class Utilities {
     // ------------------------------------------------------------------------
     // Print warning on root
     // ------------------------------------------------------------------------
-    static void PrintWarningOnRoot(const std::string &str, const int root = 0) {
+    static void PrintWarningOnRoot(const std::string& str, const int root = 0) {
         // Only print on root (rank 0)
         if (pwr::MPIUtilities::Rank() == root) {
             std::cout << "\x1b[1;33m[WARNING]\x1b[0m " << str << std::endl;

@@ -25,7 +25,7 @@ TEST_CASE("Field", "[field]") {
     const std::size_t num_nodes_active = mesh->GetNumNodesActive();
 
     // Get nodal ownership for this partition
-    const auto &nodal_ownership = mesh->GetNodalOwnership();
+    const auto& nodal_ownership = mesh->GetNodalOwnership();
 
     // Create shared point to field object
     const auto field = std::make_shared<pwr::Field>(num_nodes_active);
@@ -45,7 +45,7 @@ TEST_CASE("Field", "[field]") {
         int num_failed_tests_local = 0;
 
         // Grab field
-        const auto &f = field->GetField();
+        const auto& f = field->GetField();
 
         // Loop each value in field
         for (std::size_t i = 0; i < f.size(); ++i) {

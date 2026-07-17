@@ -44,7 +44,7 @@ void VTKWriterField::InitializeWriter_() {
     const std::size_t num_nodes_active = mesh_->GetNumNodesActive();
 
     // Grab nodal coordinates
-    const auto &nodal_coords = mesh_->GetNodalCoordinates();
+    const auto& nodal_coords = mesh_->GetNodalCoordinates();
 
     // Create vtk points object
     points_ = vtkSmartPointer<vtkPoints>::New();
@@ -53,7 +53,7 @@ void VTKWriterField::InitializeWriter_() {
     // Loop nodes
     for (std::size_t n = 0; n < num_nodes_active; ++n) {
         // Pointer to start of nodal coordinates for current node
-        const double *coords = &nodal_coords[3 * n];
+        const double* coords = &nodal_coords[3 * n];
 
         // Set coordinates for this point
         points_->SetPoint(n, coords);
@@ -67,7 +67,7 @@ void VTKWriterField::InitializeWriter_() {
     // ------------------------------------------------------------------------
 
     // Grab mesh connectivity
-    const auto &conn = mesh_->GetElemConnLocal();
+    const auto& conn = mesh_->GetElemConnLocal();
 
     // Sanity check: connectivity array has 8 nodes per element
     assert(conn.size() % 8 == 0);
@@ -120,7 +120,7 @@ void VTKWriterField::CheckSetup_() {
 // ----------------------------------------------------------------------------
 // Write output file
 // ----------------------------------------------------------------------------
-void VTKWriterField::Write_(const std::string &filename) const {
+void VTKWriterField::Write_(const std::string& filename) const {
     // Clear previous arrays
     auto point_data = grid_->GetPointData();
     point_data->Initialize();
@@ -137,8 +137,8 @@ void VTKWriterField::Write_(const std::string &filename) const {
 
     for (std::size_t i = 0; i < fields_.size(); ++i) {
         // Set field and field name
-        const auto &field = fields_[i];
-        const auto &field_name = fields_names_[i];
+        const auto& field = fields_[i];
+        const auto& field_name = fields_names_[i];
 
         // Sanity check: field is the same size as number of active nodes
         assert(num_nodes_active == field->GetFieldSize());
@@ -149,7 +149,7 @@ void VTKWriterField::Write_(const std::string &filename) const {
         field_array->SetNumberOfTuples(num_nodes_active);
 
         // Grab vector
-        const auto &f = field->GetField();
+        const auto& f = field->GetField();
 
         // Loop active nodes
         for (std::size_t n = 0; n < num_nodes_active; ++n) {
@@ -189,8 +189,8 @@ void VTKWriterField::Write_(const std::string &filename) const {
 // Writer parallel output file
 // ----------------------------------------------------------------------------
 void VTKWriterField::WriteParallel_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -212,7 +212,7 @@ void VTKWriterField::WriteParallel_(
 
     // Default type for vtkSmartPointer<vtkPoints>::New() is VTK_FLOAT; can
     // check using vtk::Points::GetDataType() and definitions in vtkSetGet.h
-    const char *pointType = "Float32";
+    const char* pointType = "Float32";
 
     // PPoints declaration (must match the Points in each .vtu)
     out << R"(    <PPoints>)" << "\n";
@@ -221,12 +221,12 @@ void VTKWriterField::WriteParallel_(
     out << R"(    </PPoints>)" << "\n";
 
     // "Float64" for vtkDoubleArray
-    const char *fieldType = "Float64";
+    const char* fieldType = "Float64";
 
     // PPointData: declare the field arrays written in Wrtie_
     out << R"(    <PPointData>)" << "\n";
 
-    for (const auto &field_name : fields_names_) {
+    for (const auto& field_name : fields_names_) {
         out << "      <PDataArray type=\"" << fieldType
             << "\" NumberOfComponents=\"1\" Name=\"" << field_name << "\"/>\n";
     }
@@ -238,7 +238,7 @@ void VTKWriterField::WriteParallel_(
     out << R"(    </PCellData>)" << "\n";
 
     // List pieces
-    for (const auto &pname : piece_filenames) {
+    for (const auto& pname : piece_filenames) {
         out << "    <Piece Source=\"" << pname << "\"/>\n";
     }
 
@@ -255,8 +255,8 @@ void VTKWriterField::WriteParallel_(
 // Write time output file
 // ----------------------------------------------------------------------------
 void VTKWriterField::WriteTime_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -278,7 +278,7 @@ void VTKWriterField::WriteTime_(
 
     // List pieces
     for (std::size_t p = 0; p < piece_filenames.size(); ++p) {
-        const auto &pname = piece_filenames[p];
+        const auto& pname = piece_filenames[p];
         out << "    <DataSet timestep=\"" << p
             << "\" group=\"\" part=\"0\" file=\"" << pname << "\"/>\n";
     }

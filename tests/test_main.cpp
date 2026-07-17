@@ -8,7 +8,7 @@
 #include "mpi_utilities.h"
 #include "utilities.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     // Create MPI Environment (RAII wrapper for MPI_Init and MPI_Finalize)
     pwr::MPIEnvironment mpi_env(argc, argv);
 

@@ -49,7 +49,7 @@ void VTKWriterMesh::InitializeWriter_() {
     const std::size_t num_nodes_active = mesh_->GetNumNodesActive();
 
     // Grab nodal coordinates
-    const auto &nodal_coords = mesh_->GetNodalCoordinates();
+    const auto& nodal_coords = mesh_->GetNodalCoordinates();
 
     // Create vtk points object
     points_ = vtkSmartPointer<vtkPoints>::New();
@@ -58,7 +58,7 @@ void VTKWriterMesh::InitializeWriter_() {
     // Loop nodes
     for (std::size_t n = 0; n < num_nodes_active; ++n) {
         // Pointer to start of nodal coordinates for current node
-        const double *coords = &nodal_coords[3 * n];
+        const double* coords = &nodal_coords[3 * n];
 
         // Set coordinates for this point
         points_->SetPoint(n, coords);
@@ -72,7 +72,7 @@ void VTKWriterMesh::InitializeWriter_() {
     // ------------------------------------------------------------------------
 
     // Grab mesh connectivity
-    const auto &conn = mesh_->GetElemConnLocal();
+    const auto& conn = mesh_->GetElemConnLocal();
 
     // Set the number of elements
     const std::size_t num_elem_total = mesh_->GetNumElemTotal();
@@ -171,7 +171,7 @@ void VTKWriterMesh::CheckSetup_() {
 // ----------------------------------------------------------------------------
 // Write output file
 // ----------------------------------------------------------------------------
-void VTKWriterMesh::Write_(const std::string &filename) const {
+void VTKWriterMesh::Write_(const std::string& filename) const {
     // Clear previous arrays
     auto cell_data = grid_->GetCellData();
     cell_data->Initialize();
@@ -211,8 +211,8 @@ void VTKWriterMesh::Write_(const std::string &filename) const {
 // Write parallel output file
 // ----------------------------------------------------------------------------
 void VTKWriterMesh::WriteParallel_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -234,7 +234,7 @@ void VTKWriterMesh::WriteParallel_(
 
     // Default type for vtkSmartPointer<vtkPoints>::New() is VTK_FLOAT; can
     // check using vtkPoints::GetDataType() and definitions in vtkSetGet.h
-    const char *pointType = "Float32";
+    const char* pointType = "Float32";
 
     // PPoints declaration (must match the Points in each .vtu)
     out << R"(    <PPoints>)" << "\n";
@@ -247,13 +247,13 @@ void VTKWriterMesh::WriteParallel_(
     out << R"(    </PPointData>)" << "\n";
 
     // "Int32" for vtkIntArray
-    const char *rankType = "Int32";
+    const char* rankType = "Int32";
 
     // "UInt8" for vtkUnsignedCharArray (vtkGhostType)
-    const char *ghostType = "UInt8";
+    const char* ghostType = "UInt8";
 
     // vtkDataSetAttributes::GhostArrayName()
-    const char *ghostName = "vtkGhostType";
+    const char* ghostName = "vtkGhostType";
 
     // PCellData: declare the cell arrays written in Write_
     out << R"(    <PCellData>)" << "\n";
@@ -264,7 +264,7 @@ void VTKWriterMesh::WriteParallel_(
     out << R"(    </PCellData>)" << "\n";
 
     // List pieces
-    for (const auto &pname : piece_filenames) {
+    for (const auto& pname : piece_filenames) {
         out << "    <Piece Source=\"" << pname << "\"/>\n";
     }
 
@@ -281,8 +281,8 @@ void VTKWriterMesh::WriteParallel_(
 // Write time output file
 // ----------------------------------------------------------------------------
 void VTKWriterMesh::WriteTime_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -304,7 +304,7 @@ void VTKWriterMesh::WriteTime_(
 
     // List pieces
     for (std::size_t p = 0; p < piece_filenames.size(); ++p) {
-        const auto &pname = piece_filenames[p];
+        const auto& pname = piece_filenames[p];
         out << "    <DataSet timestep=\"" << p
             << "\" group=\"\" part=\"0\" file=\"" << pname << "\"/>\n";
     }

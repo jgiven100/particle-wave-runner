@@ -19,7 +19,7 @@
 #include "vtk_writer_base.h"
 #include "vtk_writer_mesh.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     // Create MPI Enviroment (RAII wrapper for MPI_Init and MPI_Finalize)
     pwr::MPIEnvironment mpi_env(argc, argv);
 

@@ -79,7 +79,7 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Set index for flattened array
             const int index = 4 * (size - 1) + rank;
 
@@ -114,7 +114,7 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Set index for flattened array
             const int index = 4 * (size - 1) + rank;
 
@@ -149,7 +149,7 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Set index for flattened array
             const int index = 4 * (size - 1) + rank;
 
@@ -196,7 +196,7 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Set index for flattened array
             const int index = 4 * (size - 1) + rank;
 
@@ -231,12 +231,12 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab global element indices
-            const auto &elem_index_global = mesh->GetElemIndexGlobal();
+            const auto& elem_index_global = mesh->GetElemIndexGlobal();
 
             // Grab global element id
-            const auto &elem_id_global = mesh->GetElemIdGlobal();
+            const auto& elem_id_global = mesh->GetElemIdGlobal();
 
             // Loop partition + ghost elements
             for (std::size_t e = 0; e < mesh->GetNumElemTotal(); ++e) {
@@ -291,9 +291,9 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab global element id
-            const auto &elem_id_global = mesh->GetElemIdGlobal();
+            const auto& elem_id_global = mesh->GetElemIdGlobal();
 
             // Loop each id
             for (const auto id : elem_id_global) {
@@ -355,9 +355,9 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab connectivity (using local node ids)
-            const auto &conn = mesh->GetElemConnLocal();
+            const auto& conn = mesh->GetElemConnLocal();
 
             // Grab number of partition + ghost elements
             const std::size_t num_elem_total = mesh->GetNumElemTotal();
@@ -388,7 +388,7 @@ TEST_CASE("Mesh", "[mesh]") {
                 }
 
                 // Loop nodes
-                for (const auto &n : elem) {
+                for (const auto& n : elem) {
                     // -- Check if each node id is reasonable -----------------
                     if (n >= num_nodes_active) {
                         num_failed_tests_local++;
@@ -429,7 +429,7 @@ TEST_CASE("Mesh", "[mesh]") {
             }
 
             // -- Check if each face is found at most 2 times -----------------
-            for (const auto &[_, value] : faces) {
+            for (const auto& [_, value] : faces) {
                 if (value > 2) {
                     num_failed_tests_local++;
                 }
@@ -461,9 +461,9 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab connectivity (using global node ids)
-            const auto &conn = mesh->GetElemConnGlobal();
+            const auto& conn = mesh->GetElemConnGlobal();
 
             // Grab number of partition + ghost elements
             const std::size_t num_elem_total = mesh->GetNumElemTotal();
@@ -494,7 +494,7 @@ TEST_CASE("Mesh", "[mesh]") {
                 }
 
                 // Loop nodes
-                for (const auto &n : elem) {
+                for (const auto& n : elem) {
                     // -- Check if each node id is reasonable -----------------
                     if (n >= num_nodes_global) {
                         num_failed_tests_local++;
@@ -535,7 +535,7 @@ TEST_CASE("Mesh", "[mesh]") {
             }
 
             // -- Check if each face is found at most 2 times -----------------
-            for (const auto &[_, value] : faces) {
+            for (const auto& [_, value] : faces) {
                 if (value > 2) {
                     num_failed_tests_local++;
                 }
@@ -570,9 +570,9 @@ TEST_CASE("Mesh", "[mesh]") {
         const std::size_t total_nodes = (nx + 1) * (ny + 1) * (nz + 1);
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab nodal ownership
-            const auto &owned = mesh->GetNodalOwnership();
+            const auto& owned = mesh->GetNodalOwnership();
 
             // Count owned on this partition
             const std::size_t owned_local =
@@ -613,9 +613,9 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab nodal coordinates
-            const auto &coords = mesh->GetNodalCoordinates();
+            const auto& coords = mesh->GetNodalCoordinates();
 
             // Grab number of active nodes
             const std::size_t num_nodes_active = mesh->GetNumNodesActive();
@@ -676,12 +676,12 @@ TEST_CASE("Mesh", "[mesh]") {
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
-        for (const auto &mesh : meshes) {
+        for (const auto& mesh : meshes) {
             // Grab connectivity (using local node ids)
-            const auto &conn = mesh->GetElemConnLocal();
+            const auto& conn = mesh->GetElemConnLocal();
 
             // Grab nodal coordinates
-            const auto &coords = mesh->GetNodalCoordinates();
+            const auto& coords = mesh->GetNodalCoordinates();
 
             // Grab number of partition elements
             const std::size_t num_elem_partition = mesh->GetNumElemPartition();

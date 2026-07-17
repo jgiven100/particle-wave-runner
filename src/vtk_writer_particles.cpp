@@ -48,10 +48,10 @@ void VTKWriterParticles::InitializeWriter_() {
     // Loop particles  TODO -- loop partition particles
     for (std::size_t p = 0; p < num_particles; ++p) {
         // Grab particle
-        const auto &particle = particles_[p];
+        const auto& particle = particles_[p];
 
         // Pointer to start of particle coordinates
-        const auto &coords = particle->GetCoordsGlobal();
+        const auto& coords = particle->GetCoordsGlobal();
 
         // Set coordinates for this point
         points_->SetPoint(p, coords.data());
@@ -98,7 +98,7 @@ void VTKWriterParticles::CheckSetup_() {
 // ----------------------------------------------------------------------------
 // Write output file
 // ----------------------------------------------------------------------------
-void VTKWriterParticles::Write_(const std::string &filename) const {
+void VTKWriterParticles::Write_(const std::string& filename) const {
     // Clear previous arrays
     auto point_data = grid_->GetPointData();
     point_data->Initialize();
@@ -111,7 +111,7 @@ void VTKWriterParticles::Write_(const std::string &filename) const {
     // ------------------------------------------------------------------------
 
     // Set solution name
-    const auto &soln_name = particles_name_;
+    const auto& soln_name = particles_name_;
 
     // Create array to save particles
     auto particles_array = vtkSmartPointer<vtkDoubleArray>::New();
@@ -121,7 +121,7 @@ void VTKWriterParticles::Write_(const std::string &filename) const {
     // Loop particles  TODO -- partition particles
     for (std::size_t p = 0; p < num_particles; ++p) {
         // Grab particle and solution
-        const auto &particle = particles_[p];
+        const auto& particle = particles_[p];
         const auto soln = particle->GetSolution();
 
         // Save it
@@ -160,8 +160,8 @@ void VTKWriterParticles::Write_(const std::string &filename) const {
 // Write parallel output file
 // ----------------------------------------------------------------------------
 void VTKWriterParticles::WriteParallel_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -183,7 +183,7 @@ void VTKWriterParticles::WriteParallel_(
 
     // Default type for vtkSmartPointer<vtkPoints>::New() is VTK_FLOAT; can
     // check using vtk::Points::GetDataType() and definitions in vtkSetGet.h
-    const char *pointType = "Float32";
+    const char* pointType = "Float32";
 
     // PPoints declaration (must match the Point in each .vtu)
     out << R"(    <PPoints>)" << "\n";
@@ -192,7 +192,7 @@ void VTKWriterParticles::WriteParallel_(
     out << R"(    </PPoints>)" << "\n";
 
     // "Float64" for vtkDoubleArray
-    const char *particlesType = "Float64";
+    const char* particlesType = "Float64";
 
     // PPointData: declare the field array written in Write_
     out << R"(    <PPointData>)" << "\n";
@@ -205,7 +205,7 @@ void VTKWriterParticles::WriteParallel_(
     out << R"(    </PCellData>)" << "\n";
 
     // List pieces
-    for (const auto &pname : piece_filenames) {
+    for (const auto& pname : piece_filenames) {
         out << "    <Piece Source=\"" << pname << "\"/>\n";
     }
 
@@ -222,8 +222,8 @@ void VTKWriterParticles::WriteParallel_(
 // Write time output file
 // ----------------------------------------------------------------------------
 void VTKWriterParticles::WriteTime_(
-    const std::string &filename,
-    const std::vector<std::string> &piece_filenames) const {
+    const std::string& filename,
+    const std::vector<std::string>& piece_filenames) const {
     // Open file
     std::ofstream out(filename);
 
@@ -245,7 +245,7 @@ void VTKWriterParticles::WriteTime_(
 
     // List pieces
     for (std::size_t p = 0; p < piece_filenames.size(); ++p) {
-        const auto &pname = piece_filenames[p];
+        const auto& pname = piece_filenames[p];
         out << "    <DataSet timestep=\"" << p
             << "\" group=\"\" part=\"0\" file=\"" << pname << "\"/>\n";
     }
