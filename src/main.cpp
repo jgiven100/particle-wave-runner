@@ -126,12 +126,11 @@ int main(int argc, char **argv) {
 
         // Loop particles per element
         for (std::size_t p = 0; p < num_particles_elem; ++p) {
-            // Set local particle id      TODO -- local here means
-            // partition-wise
-            std::size_t pid_local = 0;  // TODO -- does this matter?
+            // Set local particle id (partition)
+            std::size_t pid_local = e * num_particles_elem + p;
 
             // Set global particle id
-            std::size_t pid_global = (eid_global * num_particles_elem + p);
+            std::size_t pid_global = eid_global * num_particles_elem + p;
 
             // // Decompose into local indices in each direction
             // const std::size_t p_x_i = p % n;
@@ -151,8 +150,8 @@ int main(int argc, char **argv) {
 
             // Generate particle
             const std::shared_ptr<pwr::ParticleBase> particle =
-                std::make_shared<pwr::ParticlePoisson>(pid_local, pid_global,
-                                                       owned, coords);
+                std::make_shared<pwr::ParticlePoisson>(
+                    mesh, pid_local, pid_global, owned, coords);
 
             // Save it to vector
             particles.emplace_back(particle);

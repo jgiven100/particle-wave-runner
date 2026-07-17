@@ -15,8 +15,11 @@ class ParticleBase {
     // Getters
     // ------------------------------------------------------------------------
 
-    // Get id
-    virtual std::size_t GetId() const = 0;
+    // Get local id
+    virtual std::size_t GetIdLocal() const = 0;
+
+    // Get global id
+    virtual std::size_t GetIdGlobal() const = 0;
 
     // Get global coordinates
     virtual const std::array<double, 3>& GetCoordsGlobal() const = 0;
@@ -26,6 +29,13 @@ class ParticleBase {
 
     // Get solution
     virtual double GetSolution() const = 0;
+
+    // ------------------------------------------------------------------------
+    // Setters
+    // ------------------------------------------------------------------------
+
+    // Set solution
+    virtual void SetSolution(double u) = 0;
 };
 
 }  // namespace pwr
