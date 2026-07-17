@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
     const double p_dy = e_dy / n_double;
     const double p_dz = e_dz / n_double;
 
-    // Place to save list of particle objects
-    std::vector<std::shared_ptr<pwr::ParticleBase>> particles;
-
     // Grab number of partition elements
     const std::size_t num_elem_partition = mesh->GetNumElemPartition();
+
+    // Grab number of total (partition + ghost) elements
+    const std::size_t num_elem_total = mesh->GetNumElemTotal();
 
     // Grab global element id
     const std::vector<std::size_t> elem_id_global = mesh->GetElemIdGlobal();
@@ -102,8 +102,12 @@ int main(int argc, char **argv) {
     const std::vector<std::size_t> elem_index_global =
         mesh->GetElemIndexGlobal();
 
+    // Place to save list of particle objects
+    std::vector<std::shared_ptr<pwr::ParticleBase>> particles;
+    particles.reserve(num_elem_total * num_particles_elem);
+
     // Loop total (partition + ghost) elements
-    for (std::size_t e = 0; e < mesh->GetNumElemTotal(); ++e) {
+    for (std::size_t e = 0; e < num_elem_total; ++e) {
         // Set ownership to `false` if particle is in ghost element
         const bool owned = (e >= num_elem_partition) ? false : true;
 
@@ -116,9 +120,9 @@ int main(int argc, char **argv) {
         const std::size_t e_z_i = elem_index_global[3 * e + 2];
 
         // Compute element corner
-        const double e_x0 = e_dx * static_cast<double>(e_x_i);
-        const double e_y0 = e_dy * static_cast<double>(e_y_i);
-        const double e_z0 = e_dz * static_cast<double>(e_z_i);
+        const double e_x0 = x_min + e_dx * static_cast<double>(e_x_i);
+        const double e_y0 = y_min + e_dy * static_cast<double>(e_y_i);
+        const double e_z0 = z_min + e_dz * static_cast<double>(e_z_i);
 
         // Loop particles per element
         for (std::size_t p = 0; p < num_particles_elem; ++p) {
