@@ -1,6 +1,7 @@
 #ifndef PWR_MESH_H
 #define PWR_MESH_H
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <unordered_map>
@@ -122,6 +123,15 @@ class Mesh : public MeshBase {
         return nodal_coords_;
     }
 
+    // ------------------------------------------------------------------------
+    // Find containing global element id
+    // ------------------------------------------------------------------------
+    std::size_t FindContainingElemIdGlobal(
+        const std::array<double, 3>& coords) const override {
+        assert(setup_complete_);
+        return FindContainingElemIdGlobal_(coords);
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup mesh
@@ -233,6 +243,13 @@ class Mesh : public MeshBase {
     // Computes and saves the {x,y,z} coordinates for each node
     // ------------------------------------------------------------------------
     void SetNodalCoordinates_();
+
+    // ------------------------------------------------------------------------
+    // Find containing global element id
+    // Determines and returns global element id where `coords` are located
+    // ------------------------------------------------------------------------
+    std::size_t FindContainingElemIdGlobal_(
+        const std::array<double, 3>& coords) const;
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;

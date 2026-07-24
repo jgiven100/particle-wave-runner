@@ -45,6 +45,12 @@ class MeshBase {
 
     // Get nodal coordinates
     virtual const std::vector<double>& GetNodalCoordinates() const = 0;
+
+    // ------------------------------------------------------------------------
+    // Find containing global element id
+    // ------------------------------------------------------------------------
+    virtual std::size_t FindContainingElemIdGlobal(
+        const std::array<double, 3>& coords) const = 0;
 };
 
 }  // namespace pwr

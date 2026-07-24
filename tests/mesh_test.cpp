@@ -742,4 +742,115 @@ TEST_CASE("Mesh", "[mesh]") {
 
     }  // Element volume
 
+    // ------------------------------------------------------------------------
+    // Find containing element global id
+    // ------------------------------------------------------------------------
+    {
+        INFO("Find containing element global id");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Loop each 3x3x3 mesh
+        for (const auto& mesh : meshes) {
+            // Grab connectivity (using local node ids)
+            const auto& conn = mesh->GetElemConnLocal();
+
+            // Grab nodal coordinates
+            const auto& coords = mesh->GetNodalCoordinates();
+
+            // Grab number of partition + ghost elements
+            const std::size_t num_elem_total = mesh->GetNumElemTotal();
+
+            // Grab global element id
+            const auto& gid = mesh->GetElemIdGlobal();
+
+            // Loop elements
+            for (std::size_t e = 0; e < num_elem_total; ++e) {
+                // Grab near corner
+                const std::size_t n0 = conn[8 * e + 0];
+                const double x0 = coords[3 * n0 + 0];
+                const double y0 = coords[3 * n0 + 1];
+                const double z0 = coords[3 * n0 + 2];
+
+                // Grab far corner
+                const std::size_t n7 = conn[8 * e + 7];
+                const double x7 = coords[3 * n7 + 0];
+                const double y7 = coords[3 * n7 + 1];
+                const double z7 = coords[3 * n7 + 2];
+
+                // Set center
+                const std::array<double, 3> center = {
+                    (x0 + x7) * 0.5, (y0 + y7) * 0.5, (z0 + z7) * 0.5};
+
+                // Find containing element global id
+                const std::size_t gid_itr =
+                    mesh->FindContainingElemIdGlobal(center);
+
+                // -- Check if global element ids matches ----------------------
+                if (gid[e] != gid_itr) {
+                    num_failed_tests_local++;
+                }
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Find containing element global id
+
+    // ------------------------------------------------------------------------
+    // Find containing element global id -- serial
+    // ------------------------------------------------------------------------
+    {
+        INFO("Find containing element global id -- serial");
+
+        if (size == 1) {
+            // Keep track of failed tests
+            int num_failed_tests = 0;
+
+            // Set solution (global element id)
+            // Computed by hand [24 July 2026]
+            const std::map<std::size_t, std::array<double, 3>> test_cases = {
+                {0, {1. / 6., 1. / 6., 1. / 6.}},    // Element indices: {0,0,0}
+                {1, {3. / 6., 1. / 6., 1. / 6.}},    // Element indices: {1,0,0}
+                {4, {3. / 6., 3. / 6., 1. / 6.}},    // Element indices: {1,1,0}
+                {3, {1. / 6., 3. / 6., 1. / 6.}},    // Element indices: {0,1,0}
+                {9, {1. / 6., 1. / 6., 3. / 6.}},    // Element indices: {0,0,1}
+                {10, {3. / 6., 1. / 6., 3. / 6.}},   // Element indices: {1,0,1}
+                {13, {3. / 6., 3. / 6., 3. / 6.}},   // Element indices: {1,1,1}
+                {12, {1. / 6., 3. / 6., 3. / 6.}},   // Element indices: {0,1,1}
+                {26, {5. / 6., 5. / 6., 5. / 6.}}};  // Element indices: {2,2,2}
+
+            // Loop each 3x3x3 mesh
+            for (const auto& mesh : meshes) {
+                // Loop test cases
+                for (const auto& [gid, coords] : test_cases) {
+                    // Find containing element global id
+                    const std::size_t gid_itr =
+                        mesh->FindContainingElemIdGlobal(coords);
+
+                    // -- Check if global element ids matches -----------------
+                    if (gid != gid_itr) {
+                        num_failed_tests++;
+                    }
+                }
+            }
+
+            // Only check on root (rank 0)
+            REQUIRE(num_failed_tests == 0);
+        }
+
+    }  // Find containing element global id -- serial
+
 }  // TEST_CASE("Mesh")

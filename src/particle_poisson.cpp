@@ -17,8 +17,11 @@ void ParticlePoisson::Setup_() {
 // Set containing element
 // ----------------------------------------------------------------------------
 void ParticlePoisson::SetContainingElement_() {
-    eid_local_ = 0;   // mesh->GetContainingElementLocal(coords_global_);
-    eid_global_ = 0;  // mesh->GetContainingElementGlobal(coords_global_);
+    // Grab global element id from mesh
+    eid_global_ = mesh_->FindContainingElemIdGlobal(coords_global_);
+
+    // TODO
+    eid_local_ = 0;  // mesh->GetContainingElementLocal(coords_global_);
 }
 
 // ----------------------------------------------------------------------------

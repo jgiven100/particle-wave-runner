@@ -416,12 +416,12 @@ void Mesh::SetElementsNumbering_() {
     assert(index_y_partition_0_ < ny_);
     assert(index_z_partition_0_ < nz_);
 
-    // Set final element index per direction in the partition
+    // Set ending element index per direction in the partition
     index_x_partition_f_ = index_x_partition_0_ + nx_partition_ - 1;
     index_y_partition_f_ = index_y_partition_0_ + ny_partition_ - 1;
     index_z_partition_f_ = index_z_partition_0_ + nz_partition_ - 1;
 
-    // Sanity check: partition final index is less than global
+    // Sanity check: partition ending index is less than global
     // size per direction
     assert(index_x_partition_f_ < nx_);
     assert(index_y_partition_f_ < ny_);
@@ -482,7 +482,7 @@ void Mesh::SetElementsGlobalId_() {
     const std::size_t index_y_f = index_y_partition_f_ + ny_ghost_f_;
     const std::size_t index_z_f = index_z_partition_f_ + nz_ghost_f_;
 
-    // Sanity check: partition + ghost final index is less than global
+    // Sanity check: partition + ghost ending index is less than global
     // size per direction
     assert(index_x_f < nx_);
     assert(index_y_f < ny_);
@@ -1100,5 +1100,58 @@ void Mesh::SetNodalCoordinates_() {
     }
 
 }  // Mesh::SetNodalCoordinates_
+
+// ----------------------------------------------------------------------------
+// Get containing global element id
+// ----------------------------------------------------------------------------
+std::size_t Mesh::FindContainingElemIdGlobal_(
+    const std::array<double, 3>& coords) const {
+    // Sanity check: coords are within global bounds
+    assert(coords[0] >= x_min_ && coords[0] <= x_max_);
+    assert(coords[1] >= y_min_ && coords[1] <= y_max_);
+    assert(coords[2] >= z_min_ && coords[2] <= z_max_);
+
+    // Compute containing element index in each direction as double
+    const double x = (coords[0] - x_min_) / dx_;
+    const double y = (coords[1] - y_min_) / dy_;
+    const double z = (coords[2] - z_min_) / dz_;
+
+    // Sanity check: coords are not on element boundaries
+    assert(std::abs(x - std::round(x)) > 1.e-12);
+    assert(std::abs(y - std::round(y)) > 1.e-12);
+    assert(std::abs(z - std::round(z)) > 1.e-12);
+
+    // Compute containing element index in each direction; static_cast
+    // truncates towards zero for positive double
+    const std::size_t x_i = static_cast<std::size_t>(x);
+    const std::size_t y_i = static_cast<std::size_t>(y);
+    const std::size_t z_i = static_cast<std::size_t>(z);
+
+    // Starting element index per direction (including ghost elements)
+    // Underflow safe: nx_ghost_0_ = std::min(w, index_x_partition_0_)
+    // Underflow safe: ny_ghost_0_ = std::min(w, index_y_partition_0_)
+    // Underflow safe: nz_ghost_0_ = std::min(w, index_z_partition_0_)
+    const std::size_t index_x_0 = index_x_partition_0_ - nx_ghost_0_;
+    const std::size_t index_y_0 = index_y_partition_0_ - ny_ghost_0_;
+    const std::size_t index_z_0 = index_z_partition_0_ - nz_ghost_0_;
+
+    // Ending element index per direction (including ghost elements)
+    const std::size_t index_x_f = index_x_partition_f_ + nx_ghost_f_;
+    const std::size_t index_y_f = index_y_partition_f_ + ny_ghost_f_;
+    const std::size_t index_z_f = index_z_partition_f_ + nz_ghost_f_;
+
+    // Sanity check: element index is greater than or equal to known
+    // starting index and less than or equal to ending index (including
+    // known ghost elements at the beginning and end of this block)
+    assert(x_i >= index_x_0 && x_i <= index_x_f);
+    assert(y_i >= index_y_0 && y_i <= index_y_f);
+    assert(z_i >= index_z_0 && z_i <= index_z_f);
+
+    // Set global id
+    const std::size_t gid = x_i + (nx_ * y_i) + (nx_ * ny_ * z_i);
+
+    return gid;
+
+}  // Mesh::FindContainingElemIdGlobal_
 
 }  // namespace pwr
