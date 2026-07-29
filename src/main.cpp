@@ -1,6 +1,5 @@
 #include <mpi.h>
 
-#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -142,11 +141,11 @@ int main(int argc, char** argv) {
             const std::size_t p_y_i = particle_index_elem[3 * p + 1];
             const std::size_t p_z_i = particle_index_elem[3 * p + 2];
 
-            // Set coords array
+            // Set coords vector
             const double x = e_x0 + (static_cast<double>(p_x_i) + 0.5) * p_dx;
             const double y = e_y0 + (static_cast<double>(p_y_i) + 0.5) * p_dy;
             const double z = e_z0 + (static_cast<double>(p_z_i) + 0.5) * p_dz;
-            std::array<double, 3> coords{x, y, z};
+            std::vector<double> coords{x, y, z};
 
             // Generate particle
             const std::shared_ptr<pwr::ParticleBase> particle =

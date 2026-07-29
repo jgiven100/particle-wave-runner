@@ -1,10 +1,10 @@
 #ifndef PWR_PARTICLE_POISSON_H
 #define PWR_PARTICLE_POISSON_H
 
-#include <array>
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 #include "mesh_base.h"
 #include "particle_base.h"
@@ -19,7 +19,7 @@ class ParticlePoisson : public ParticleBase {
     // ------------------------------------------------------------------------
     ParticlePoisson(std::shared_ptr<const MeshBase> mesh, std::size_t pid_local,
                     std::size_t pid_global, bool owned,
-                    const std::array<double, 3>& coords_global)
+                    const std::vector<double>& coords_global)
         : mesh_(mesh),
           pid_local_(pid_local),
           pid_global_(pid_global),
@@ -60,13 +60,13 @@ class ParticlePoisson : public ParticleBase {
     }
 
     // Get global coordinates
-    const std::array<double, 3>& GetCoordsGlobal() const override {
+    const std::vector<double>& GetCoordsGlobal() const override {
         assert(setup_complete_);
         return coords_global_;
     }
 
     // Get local coordinates
-    const std::array<double, 3>& GetCoordsLocal() const override {
+    const std::vector<double>& GetCoordsLocal() const override {
         assert(setup_complete_);
         return coords_local_;
     }
@@ -138,10 +138,10 @@ class ParticlePoisson : public ParticleBase {
     const bool owned_;
 
     // Local coordinates
-    std::array<double, 3> coords_local_;
+    std::vector<double> coords_local_;
 
     // Global coordinates
-    std::array<double, 3> coords_global_;
+    std::vector<double> coords_global_;
 
     // Local element id (partition) for containing element
     std::size_t eid_local_;

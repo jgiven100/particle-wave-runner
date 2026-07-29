@@ -1,7 +1,6 @@
 #include "mesh.h"
 
 #include <algorithm>
-#include <array>
 #include <catch2/catch_all.hpp>
 #include <cstddef>
 #include <map>
@@ -46,7 +45,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
     // Set solution (number of partition elements)
     // Computed by hand [02 April 2026]
-    const std::array<std::size_t, 16> num_elem_partition = {
+    const std::vector<std::size_t> num_elem_partition = {
         27, 0,  0,  0,   // MPI size = 1
         9,  18, 0,  0,   // MPI size = 2
         6,  9,  12, 0,   // MPI size = 3
@@ -54,20 +53,19 @@ TEST_CASE("Mesh", "[mesh]") {
 
     // Set solution (number of known ghost elements)
     // Computed by hand [02 April 2026]
-    const std::array<std::size_t, 16> num_elem_ghost = {
+    const std::vector<std::size_t> num_elem_ghost = {
         0,  0,  0,  0,    // MPI size = 1
         9,  9,  0,  0,    // MPI size = 2
         12, 9,  15, 0,    // MPI size = 3
         14, 12, 9,  19};  // MPI size = 4
 
     // Node indices for each face
-    const std::array<std::size_t, 24> face_indices = {
-        0, 1, 2, 3,   // Bottom face
-        4, 5, 6, 7,   // Top face
-        0, 1, 5, 4,   // South face
-        3, 0, 4, 7,   // West face
-        3, 2, 6, 7,   // North face
-        2, 1, 5, 6};  // East face
+    const std::vector<std::size_t> face_indices = {0, 1, 2, 3,   // Bottom face
+                                                   4, 5, 6, 7,   // Top face
+                                                   0, 1, 5, 4,   // South face
+                                                   3, 0, 4, 7,   // West face
+                                                   3, 2, 6, 7,   // North face
+                                                   2, 1, 5, 6};  // East face
 
     // ------------------------------------------------------------------------
     // Number of partition elements
@@ -80,7 +78,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
         // Loop each 3x3x3 mesh
         for (const auto& mesh : meshes) {
-            // Set index for flattened array
+            // Set index for flattened vector
             const int index = 4 * (size - 1) + rank;
 
             // -- Check if getter matches hand calc'd solution ----------------
@@ -115,7 +113,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
         // Loop each 3x3x3 mesh
         for (const auto& mesh : meshes) {
-            // Set index for flattened array
+            // Set index for flattened vector
             const int index = 4 * (size - 1) + rank;
 
             // -- Check if getter matches hand calc'd solution ----------------
@@ -150,7 +148,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
         // Loop each 3x3x3 mesh
         for (const auto& mesh : meshes) {
-            // Set index for flattened array
+            // Set index for flattened vector
             const int index = 4 * (size - 1) + rank;
 
             // Number of partition + ghost elements
@@ -186,7 +184,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
         // Set solution (number of active nodes)
         // Computed by hand [02 April 2026]
-        const std::array<std::size_t, 16> num_nodes_active = {
+        const std::vector<std::size_t> num_nodes_active = {
             64, 0,  0,  0,    // MPI size = 1
             48, 64, 0,  0,    // MPI size = 2
             48, 48, 64, 0,    // MPI size = 3
@@ -197,7 +195,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
         // Loop each 3x3x3 mesh
         for (const auto& mesh : meshes) {
-            // Set index for flattened array
+            // Set index for flattened vector
             const int index = 4 * (size - 1) + rank;
 
             // -- Check if getter matches hand calc'd solution ----------------
@@ -374,7 +372,7 @@ TEST_CASE("Mesh", "[mesh]") {
             std::set<std::set<std::size_t>> elems;
 
             // Create map to count occurances for each face
-            std::map<std::array<std::size_t, 4>, int> faces;
+            std::map<std::vector<std::size_t>, int> faces;
 
             // Loop elements
             for (std::size_t e = 0; e < num_elem_total; ++e) {
@@ -413,7 +411,7 @@ TEST_CASE("Mesh", "[mesh]") {
                         conn[8 * e + face_indices[4 * f + 2]];
                     const std::size_t n3 =
                         conn[8 * e + face_indices[4 * f + 3]];
-                    std::array<std::size_t, 4> face = {n0, n1, n2, n3};
+                    std::vector<std::size_t> face = {n0, n1, n2, n3};
                     std::sort(face.begin(), face.end());
 
                     // Find current face
@@ -480,7 +478,7 @@ TEST_CASE("Mesh", "[mesh]") {
             std::set<std::set<std::size_t>> elems;
 
             // Create map to count occurances for each face
-            std::map<std::array<std::size_t, 4>, int> faces;
+            std::map<std::vector<std::size_t>, int> faces;
 
             // Loop elements
             for (std::size_t e = 0; e < num_elem_total; ++e) {
@@ -519,7 +517,7 @@ TEST_CASE("Mesh", "[mesh]") {
                         conn[8 * e + face_indices[4 * f + 2]];
                     const std::size_t n3 =
                         conn[8 * e + face_indices[4 * f + 3]];
-                    std::array<std::size_t, 4> face = {n0, n1, n2, n3};
+                    std::vector<std::size_t> face = {n0, n1, n2, n3};
                     std::sort(face.begin(), face.end());
 
                     // Find current face
@@ -713,7 +711,7 @@ TEST_CASE("Mesh", "[mesh]") {
             const std::size_t num_nodes_active = mesh->GetNumNodesActive();
 
             // Create set to store unique nodes
-            std::set<std::array<double, 3>> nodes;
+            std::set<std::vector<double>> nodes;
 
             // Loop nodes
             for (std::size_t n = 0; n < num_nodes_active; ++n) {
@@ -780,7 +778,7 @@ TEST_CASE("Mesh", "[mesh]") {
                 const double z7 = coords[3 * n7 + 2];
 
                 // Set center
-                const std::array<double, 3> center = {
+                const std::vector<double> center = {
                     (x0 + x7) * 0.5, (y0 + y7) * 0.5, (z0 + z7) * 0.5};
 
                 // Find containing element global id
@@ -821,7 +819,7 @@ TEST_CASE("Mesh", "[mesh]") {
 
             // Set solution (global element id)
             // Computed by hand [24 July 2026]
-            const std::map<std::size_t, std::array<double, 3>> test_cases = {
+            const std::map<std::size_t, std::vector<double>> test_cases = {
                 {0, {1. / 6., 1. / 6., 1. / 6.}},    // Element indices: {0,0,0}
                 {1, {3. / 6., 1. / 6., 1. / 6.}},    // Element indices: {1,0,0}
                 {4, {3. / 6., 3. / 6., 1. / 6.}},    // Element indices: {1,1,0}

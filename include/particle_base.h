@@ -1,8 +1,8 @@
 #ifndef PWR_PARTICLE_BASE_H
 #define PWR_PARTICLE_BASE_H
 
-#include <array>
 #include <cstddef>
+#include <vector>
 
 namespace pwr {
 
@@ -22,10 +22,10 @@ class ParticleBase {
     virtual std::size_t GetIdGlobal() const = 0;
 
     // Get global coordinates
-    virtual const std::array<double, 3>& GetCoordsGlobal() const = 0;
+    virtual const std::vector<double>& GetCoordsGlobal() const = 0;
 
     // Get local coordinates
-    virtual const std::array<double, 3>& GetCoordsLocal() const = 0;
+    virtual const std::vector<double>& GetCoordsLocal() const = 0;
 
     // Get solution
     virtual double GetSolution() const = 0;

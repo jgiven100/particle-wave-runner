@@ -1,7 +1,6 @@
 #ifndef PWR_MESH_H
 #define PWR_MESH_H
 
-#include <array>
 #include <cassert>
 #include <cstddef>
 #include <unordered_map>
@@ -127,7 +126,7 @@ class Mesh : public MeshBase {
     // Find containing global element id
     // ------------------------------------------------------------------------
     std::size_t FindContainingElemIdGlobal(
-        const std::array<double, 3>& coords) const override {
+        const std::vector<double>& coords) const override {
         assert(setup_complete_);
         return FindContainingElemIdGlobal_(coords);
     }
@@ -249,7 +248,7 @@ class Mesh : public MeshBase {
     // Determines and returns global element id where `coords` are located
     // ------------------------------------------------------------------------
     std::size_t FindContainingElemIdGlobal_(
-        const std::array<double, 3>& coords) const;
+        const std::vector<double>& coords) const;
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;

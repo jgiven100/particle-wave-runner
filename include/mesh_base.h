@@ -50,7 +50,7 @@ class MeshBase {
     // Find containing global element id
     // ------------------------------------------------------------------------
     virtual std::size_t FindContainingElemIdGlobal(
-        const std::array<double, 3>& coords) const = 0;
+        const std::vector<double>& coords) const = 0;
 };
 
 }  // namespace pwr

@@ -1,7 +1,6 @@
 #include "mesh.h"
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -869,7 +868,7 @@ void Mesh::SetNodalOwnership_() {
     nodal_ownership_elem_.resize(num_nodes_active_, 0);
 
     // Create offset map
-    const std::array<int, 24> offset{
+    const std::vector<int> offset{
         -1, -1, -1,  // element 0
         0,  -1, -1,  // element 1
         0,  0,  -1,  // element 2
@@ -1038,7 +1037,7 @@ void Mesh::SetNodalCoordinates_() {
                          std::numeric_limits<double>::max());
 
     // Create offset map
-    const std::array<double, 24> offset{
+    const std::vector<double> offset{
         0.,  0.,  0.,   // node 0
         dx_, 0.,  0.,   // node 1
         0.,  dy_, 0.,   // node 2
@@ -1105,7 +1104,10 @@ void Mesh::SetNodalCoordinates_() {
 // Get containing global element id
 // ----------------------------------------------------------------------------
 std::size_t Mesh::FindContainingElemIdGlobal_(
-    const std::array<double, 3>& coords) const {
+    const std::vector<double>& coords) const {
+    // Sanity check: coords are proper size
+    assert(coords.size() == 3);
+
     // Sanity check: coords are within global bounds
     assert(coords[0] >= x_min_ && coords[0] <= x_max_);
     assert(coords[1] >= y_min_ && coords[1] <= y_max_);
