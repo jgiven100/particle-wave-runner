@@ -15,6 +15,7 @@ add_executable(particle_wave_runner_tests
     test_main.cpp
     mesh_test.cpp
     mpi_utilities_test.cpp
+    particle_poisson_test.cpp
 )
 
 # Include the header files
