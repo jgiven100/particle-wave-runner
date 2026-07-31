@@ -31,6 +31,11 @@ TEST_CASE("Mesh", "[mesh]") {
     const double y_max = 1.;
     const double z_max = 1.;
 
+    // NOTE: If global coordinates are updated such that (dx != dy != dz),
+    //       all tests should still pass except for "Element Volume", which
+    //       fails due constructor delegation providing defaults 0,1 for
+    //       min,max values.
+
     // Number of elements per direction
     const std::size_t nx = 3;
     const std::size_t ny = 3;
