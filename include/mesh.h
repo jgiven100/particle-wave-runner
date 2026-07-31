@@ -131,6 +131,16 @@ class Mesh : public MeshBase {
         return FindContainingElemIdGlobal_(coords);
     }
 
+    // ------------------------------------------------------------------------
+    // Compute local coordinates
+    // ------------------------------------------------------------------------
+    void ComputeLocalCoordinates(
+        const std::size_t gid, const std::vector<double>& coords_global,
+        std::vector<double>& coords_local) const override {
+        assert(setup_complete_);
+        ComputeLocalCoordinates_(gid, coords_global, coords_local);
+    }
+
    private:
     // ------------------------------------------------------------------------
     // Setup mesh
@@ -249,6 +259,15 @@ class Mesh : public MeshBase {
     // ------------------------------------------------------------------------
     std::size_t FindContainingElemIdGlobal_(
         const std::vector<double>& coords) const;
+
+    // ------------------------------------------------------------------------
+    // Compute local coordinates
+    // Computes and returns coordinates in local frame of reference for a
+    // given global element id and global coordinates
+    // ------------------------------------------------------------------------
+    void ComputeLocalCoordinates_(const std::size_t gid,
+                                  const std::vector<double>& coords_global,
+                                  std::vector<double>& coords_local) const;
 
     // CheckSetup_() has been successfully called
     bool setup_complete_ = false;

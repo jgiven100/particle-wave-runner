@@ -91,8 +91,8 @@ class ParticlePoisson : public ParticleBase {
     // ------------------------------------------------------------------------
     // Setup particle
     // Calls:
-    //   SetContainingElement_() -- TODO
-    //   SetLocalCoordinates_() -- TODO
+    //   SetContainingElement_()
+    //   SetLocalCoordinates_()
     //   SetConnectedNodes_() -- TODO
     //   ComputeShapeFunctions_() -- TODO
     //   ComputeShapeFunctionGradientsLocal_() -- TODO
@@ -107,6 +107,11 @@ class ParticlePoisson : public ParticleBase {
     // Set containing element
     // ------------------------------------------------------------------------
     void SetContainingElement_();
+
+    // ------------------------------------------------------------------------
+    // Set local coordinates
+    // ------------------------------------------------------------------------
+    void SetLocalCoordinates_();
 
     // ------------------------------------------------------------------------
     // Compute Jacobian terms

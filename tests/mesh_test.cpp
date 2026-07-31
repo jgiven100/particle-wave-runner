@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <catch2/catch_all.hpp>
+#include <cmath>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -10,6 +11,9 @@
 
 #include "mesh_base.h"
 #include "mpi_utilities.h"
+#include "numbers.h"
+
+using pwr::numbers::TOL;
 
 TEST_CASE("Mesh", "[mesh]") {
     // Grab rank and size
@@ -702,7 +706,7 @@ TEST_CASE("Mesh", "[mesh]") {
                 const double dvol = (x7 - x0) * (y7 - y0) * (z7 - z0);
 
                 // -- Check if volume is close --------------------------------
-                if (std::fabs(dvol - elem_vol) > 1.e-12) {
+                if (std::fabs(dvol - elem_vol) > TOL) {
                     num_failed_tests_local++;
                 }
             }
@@ -850,5 +854,80 @@ TEST_CASE("Mesh", "[mesh]") {
         }
 
     }  // Find containing element global id -- serial
+
+    // ------------------------------------------------------------------------
+    // Compute local coordinates
+    // ------------------------------------------------------------------------
+    {
+        INFO("Compute local coordinates");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Loop each 3x3x3 mesh
+        for (const auto& mesh : meshes) {
+            // Grab connectivity (using local node ids)
+            const auto& conn = mesh->GetElemConnLocal();
+
+            // Grab nodal coordinates
+            const auto& coords = mesh->GetNodalCoordinates();
+
+            // Grab number of partition + ghost elements
+            const std::size_t num_elem_total = mesh->GetNumElemTotal();
+
+            // Grab global element id
+            const auto& gid = mesh->GetElemIdGlobal();
+
+            // Loop elements
+            for (std::size_t e = 0; e < num_elem_total; ++e) {
+                // Grab near corner
+                const std::size_t n0 = conn[8 * e + 0];
+                const double x0 = coords[3 * n0 + 0];
+                const double y0 = coords[3 * n0 + 1];
+                const double z0 = coords[3 * n0 + 2];
+
+                // Grab far corner
+                const std::size_t n7 = conn[8 * e + 7];
+                const double x7 = coords[3 * n7 + 0];
+                const double y7 = coords[3 * n7 + 1];
+                const double z7 = coords[3 * n7 + 2];
+
+                // Set global coordinates
+                const std::vector<double> coords_global = {
+                    (x0 + x7) * 0.5 - (x7 - x0) * 0.4,
+                    (y0 + y7) * 0.5 + (y7 - y0) * 0.1,
+                    (z0 + z7) * 0.5 + (z7 - z0) * 0.5};
+
+                // Compute local coordinates
+                std::vector<double> coords_local;
+                mesh->ComputeLocalCoordinates(gid[e], coords_global,
+                                              coords_local);
+
+                // Compute error
+                const double error = std::fabs(coords_local[0] + 0.8) +
+                                     std::fabs(coords_local[1] - 0.2) +
+                                     std::fabs(coords_local[2] - 1.0);
+
+                // -- Check if local coordinates matches known values ---------
+                if (error > TOL) {
+                    num_failed_tests_local++;
+                }
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Compute local coordinates
 
 }  // TEST_CASE("Mesh")

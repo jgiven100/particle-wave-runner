@@ -11,6 +11,9 @@
 #include <vector>
 
 #include "mpi_utilities.h"
+#include "numbers.h"
+
+using pwr::numbers::TOL;
 
 namespace pwr {
 
@@ -1119,9 +1122,9 @@ std::size_t Mesh::FindContainingElemIdGlobal_(
     const double z = (coords[2] - z_min_) / dz_;
 
     // Sanity check: coords are not on element boundaries
-    assert(std::abs(x - std::round(x)) > 1.e-12);
-    assert(std::abs(y - std::round(y)) > 1.e-12);
-    assert(std::abs(z - std::round(z)) > 1.e-12);
+    assert(std::abs(x - std::round(x)) > TOL);
+    assert(std::abs(y - std::round(y)) > TOL);
+    assert(std::abs(z - std::round(z)) > TOL);
 
     // Compute containing element index in each direction; static_cast
     // truncates towards zero for positive double
@@ -1155,5 +1158,55 @@ std::size_t Mesh::FindContainingElemIdGlobal_(
     return gid;
 
 }  // Mesh::FindContainingElemIdGlobal_
+
+// ----------------------------------------------------------------------------
+// Compute local coordinates
+// ----------------------------------------------------------------------------
+void Mesh::ComputeLocalCoordinates_(const std::size_t gid,
+                                    const std::vector<double>& coords_global,
+                                    std::vector<double>& coords_local) const {
+    // Sanity check: global coordinates are proper size
+    assert(coords_global.size() == 3);
+
+    // Inverse isoparametric mapping
+    // NOTE: Structured cartesian mesh has closed-form Jacobian since
+    //       Jacobian is constant and aligned with coordinate axes.
+
+    // Grab local element id
+    const auto it = elem_id_local_.find(gid);
+    assert(it != elem_id_local_.end());
+    const std::size_t lid = it->second;
+
+    // Sanity check: local element accesses in-bound nodes
+    assert(8 * (lid + 1) <= conn_local_.size());
+
+    // Grab bottom corner node index
+    const std::size_t n0 = conn_local_[8 * lid + 0];
+
+    // Sanity check: local node index acccess in-bound coordinates
+    assert(3 * (n0 + 1) <= nodal_coords_.size());
+
+    // Grab nodal coordinates
+    const double x_min = nodal_coords_[3 * n0 + 0];
+    const double y_min = nodal_coords_[3 * n0 + 1];
+    const double z_min = nodal_coords_[3 * n0 + 2];
+
+    // Set local coordinates
+    const double x = 2. * (coords_global[0] - x_min) / dx_ - 1.;
+    const double y = 2. * (coords_global[1] - y_min) / dy_ - 1.;
+    const double z = 2. * (coords_global[2] - z_min) / dz_ - 1.;
+
+    // Sanity check: local coordinates are in [-1,1]
+    assert(std::fabs(x) <= (1. + TOL));
+    assert(std::fabs(y) <= (1. + TOL));
+    assert(std::fabs(z) <= (1. + TOL));
+
+    // Put computed coordinates into vector
+    coords_local.resize(3);
+    coords_local[0] = x;
+    coords_local[1] = y;
+    coords_local[2] = z;
+
+}  // Mesh::ComputeLocalCoordinates_
 
 }  // namespace pwr

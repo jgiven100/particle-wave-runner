@@ -51,6 +51,13 @@ class MeshBase {
     // ------------------------------------------------------------------------
     virtual std::size_t FindContainingElemIdGlobal(
         const std::vector<double>& coords) const = 0;
+
+    // ------------------------------------------------------------------------
+    // Compute local coordinates
+    // ------------------------------------------------------------------------
+    virtual void ComputeLocalCoordinates(
+        const std::size_t gid, const std::vector<double>& coords_global,
+        std::vector<double>& coords_local) const = 0;
 };
 
 }  // namespace pwr
