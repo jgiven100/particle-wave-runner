@@ -619,21 +619,20 @@ void Mesh::SetElementsNeighborhood_() {
 
     // Set number of neighbors per element (depending on basis function order)
     const int w = static_cast<int>(neighborhood_width_);
-    const std::size_t num_neighbors =
-        (2 * w + 1) * (2 * w + 1) * (2 * w + 1) - 1;
+    num_neighbors_ = (2 * w + 1) * (2 * w + 1) * (2 * w + 1) - 1;
 
     // Resize based on number neighbors per element
-    elem_neighborhood_.resize(num_neighbors * num_elem_partition_);
+    elem_neighborhood_.resize(num_neighbors_ * num_elem_total_);
 
     // Default neighbor id is local element id
-    for (std::size_t e = 0; e < num_elem_partition_; ++e) {
-        for (std::size_t n = 0; n < num_neighbors; ++n) {
-            elem_neighborhood_[num_neighbors * e + n] = e;
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
+        for (std::size_t n = 0; n < num_neighbors_; ++n) {
+            elem_neighborhood_[num_neighbors_ * e + n] = e;
         }
     }
 
     // Loop elements
-    for (std::size_t e = 0; e < num_elem_partition_; ++e) {
+    for (std::size_t e = 0; e < num_elem_total_; ++e) {
         // Grab global element id
         const std::size_t gid = elem_id_global_[e];
 
@@ -675,7 +674,8 @@ void Mesh::SetElementsNeighborhood_() {
                     if (nx_i < 0 || static_cast<int>(nx_) <= nx_i || ny_i < 0 ||
                         static_cast<int>(ny_) <= ny_i || nz_i < 0 ||
                         static_cast<int>(nz_) <= nz_i) {
-                        // Increment and skip the rest
+                        // Default neighbor id is already set (above) for
+                        // invalid neighbor, so increment and skip the rest
                         n++;
                         continue;
                     }
@@ -695,20 +695,36 @@ void Mesh::SetElementsNeighborhood_() {
 
                     // Neighbor's local element id
                     const auto it = elem_id_local_.find(n_gid);
-                    assert(it != elem_id_local_.end());
-                    const std::size_t n_lid = it->second;
 
-                    // Sanity check: local id has been initialized
-                    assert(n_lid < std::numeric_limits<std::size_t>::max());
+                    // Neighbor exists
+                    if (it != elem_id_local_.end()) {
+                        // Set neighbor's local element id
+                        const std::size_t n_lid = it->second;
 
-                    // Save neighbor local element id
-                    elem_neighborhood_[num_neighbors * e + n] = n_lid;
+                        // Sanity check: local id is feasible
+                        assert(n_lid < num_elem_total_);
 
-                    // Increment
+                        // Save neighbor's local element id
+                        elem_neighborhood_[num_neighbors_ * e + n] = n_lid;
+
+                        // Increment and skip the rest
+                        n++;
+                        continue;
+                    }
+
+                    // Santiy check: all partition neighbors are already found
+                    // (i.e., outside global domain, center, neighbor exists)
+                    assert(e >= num_elem_partition_);
+
+                    // Reaching here means the ghost element neighbor is on a
+                    // different partition; leave default neighbor id
                     n++;
                 }
             }
         }
+
+        // Sanity check: no skips or double-counting neighbors
+        assert(n == num_neighbors_);
     }
 
 }  // Mesh::SetElementsNeighborhood_

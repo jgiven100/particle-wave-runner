@@ -1,6 +1,7 @@
 #include "particle_poisson.h"
 
 #include <cassert>
+#include <unordered_map>
 
 namespace pwr {
 
@@ -21,8 +22,13 @@ void ParticlePoisson::SetContainingElement_() {
     // Grab global element id from mesh
     eid_global_ = mesh_->FindContainingElemIdGlobal(coords_global_);
 
-    // Placeholder for local element id (currently not used!)
-    eid_local_ = 0;
+    // Grab map from global-to-local element id
+    const auto& elem_id_local = mesh->GetElemIdLocal();
+
+    // Find corresponding local element id
+    const auto it = elem_id_local.find(eid_global_);
+    assert(it != elem_id_local.end());
+    eid_local_ = it->second;
 
 }  // ParticlePoisson::SetContainingElement_
 

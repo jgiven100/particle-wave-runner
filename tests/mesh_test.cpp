@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "mesh_base.h"
@@ -353,91 +354,79 @@ TEST_CASE("Mesh", "[mesh]") {
     }  // Global element id
 
     // ------------------------------------------------------------------------
-    // Local element connectivity
+    // Local element id
     // ------------------------------------------------------------------------
     {
-        INFO("Local element connectivity");
+        INFO("Local element id");
 
         // Keep track of failed tests on this rank
         int num_failed_tests_local = 0;
 
         // Loop each 3x3x3 mesh
         for (const auto& mesh : meshes) {
-            // Grab connectivity (using local node ids)
-            const auto& conn = mesh->GetElemConnLocal();
-
             // Grab number of partition + ghost elements
             const std::size_t num_elem_total = mesh->GetNumElemTotal();
 
-            // Grab number of active nodes
-            const std::size_t num_nodes_active = mesh->GetNumNodesActive();
+            // Place to store encountered local element ids
+            std::vector<char> seen(num_elem_total, 0);
 
-            // -- Check if each element has 8 nodes ---------------------------
-            if (conn.size() / 8 != num_elem_total) {
+            // Grab local element id
+            const auto& elem_id_local = mesh->GetElemIdLocal();
+
+            // -- Check map size ----------------------------------------------
+            if (elem_id_local.size() != num_elem_total) {
                 num_failed_tests_local++;
             }
 
-            // Create set of sets to store unique nodes for each element
-            std::set<std::set<std::size_t>> elems;
-
-            // Create map to count occurances for each face
-            std::map<std::vector<std::size_t>, int> faces;
-
-            // Loop elements
-            for (std::size_t e = 0; e < num_elem_total; ++e) {
-                // Create set with nodes for each element
-                std::set<std::size_t> elem(conn.begin() + (e * 8),
-                                           conn.begin() + ((e + 1) * 8));
-
-                // -- Check if each element has 8 unique nodes ----------------
-                if (elem.size() != 8) {
+            // Loop each id
+            for (const auto& [gid, lid] : elem_id_local) {
+                // -- Check if gid is greater than global max -----------------
+                if (gid >= nx * ny * nz) {
                     num_failed_tests_local++;
                 }
 
-                // Loop nodes
-                for (const auto& n : elem) {
-                    // -- Check if each node id is reasonable -----------------
-                    if (n >= num_nodes_active) {
-                        num_failed_tests_local++;
-                    }
+                // -- Check if lid is greater than local total ----------------
+                if (lid >= num_elem_total) {
+                    num_failed_tests_local++;
+                    continue;
                 }
 
-                // -- Check if there are duplicate elements -------------------
-                const auto it = elems.find(elem);
-                if (it != elems.end()) {
+                // -- Check if lid is unique ----------------------------------
+                if (seen[lid]) {
                     num_failed_tests_local++;
                 }
-                elems.insert(elem);
 
-                // Loop faces and count shared faces
-                for (int f = 0; f < 6; ++f) {
-                    // Set nodes and sort
-                    const std::size_t n0 =
-                        conn[8 * e + face_indices[4 * f + 0]];
-                    const std::size_t n1 =
-                        conn[8 * e + face_indices[4 * f + 1]];
-                    const std::size_t n2 =
-                        conn[8 * e + face_indices[4 * f + 2]];
-                    const std::size_t n3 =
-                        conn[8 * e + face_indices[4 * f + 3]];
-                    std::vector<std::size_t> face = {n0, n1, n2, n3};
-                    std::sort(face.begin(), face.end());
+                // Update encountered list
+                seen[lid] = 1;
+            }
 
-                    // Find current face
-                    const auto it = faces.find(face);
-                    if (it != faces.end()) {
-                        // If face already exists, increment and move to
-                        // next face
-                        it->second++;
-                        continue;
-                    }
-                    faces.insert({face, 1});
+            // Loop encountered list
+            for (const auto s : seen) {
+                // -- Check for holes -----------------------------------------
+                if (!s) {
+                    num_failed_tests_local++;
                 }
             }
 
-            // -- Check if each face is found at most 2 times -----------------
-            for (const auto& [_, value] : faces) {
-                if (value > 2) {
+            // Cross check two data structures
+            const auto& elem_id_global = mesh->GetElemIdGlobal();
+
+            // Loop each local element id
+            for (std::size_t e = 0; e < num_elem_total; ++e) {
+                // Set global element id
+                const std::size_t gid = elem_id_global[e];
+
+                // Find iterator to corresponding local element id
+                const auto it = elem_id_local.find(gid);
+
+                // -- Check if local element id is found ----------------------
+                if (it == elem_id_local.end()) {
+                    num_failed_tests_local++;
+                    continue;
+                }
+
+                // -- Check if consistent -------------------------------------
+                if (e != it->second) {
                     num_failed_tests_local++;
                 }
             }
@@ -456,7 +445,7 @@ TEST_CASE("Mesh", "[mesh]") {
             REQUIRE(num_failed_tests_global == 0);
         }
 
-    }  // Local element connectivity
+    }  // Local element id
 
     // ------------------------------------------------------------------------
     // Global element connectivity
@@ -563,6 +552,112 @@ TEST_CASE("Mesh", "[mesh]") {
         }
 
     }  // Global element connectivity
+
+    // ------------------------------------------------------------------------
+    // Local element connectivity
+    // ------------------------------------------------------------------------
+    {
+        INFO("Local element connectivity");
+
+        // Keep track of failed tests on this rank
+        int num_failed_tests_local = 0;
+
+        // Loop each 3x3x3 mesh
+        for (const auto& mesh : meshes) {
+            // Grab connectivity (using local node ids)
+            const auto& conn = mesh->GetElemConnLocal();
+
+            // Grab number of partition + ghost elements
+            const std::size_t num_elem_total = mesh->GetNumElemTotal();
+
+            // Grab number of active nodes
+            const std::size_t num_nodes_active = mesh->GetNumNodesActive();
+
+            // -- Check if each element has 8 nodes ---------------------------
+            if (conn.size() / 8 != num_elem_total) {
+                num_failed_tests_local++;
+            }
+
+            // Create set of sets to store unique nodes for each element
+            std::set<std::set<std::size_t>> elems;
+
+            // Create map to count occurances for each face
+            std::map<std::vector<std::size_t>, int> faces;
+
+            // Loop elements
+            for (std::size_t e = 0; e < num_elem_total; ++e) {
+                // Create set with nodes for each element
+                std::set<std::size_t> elem(conn.begin() + (e * 8),
+                                           conn.begin() + ((e + 1) * 8));
+
+                // -- Check if each element has 8 unique nodes ----------------
+                if (elem.size() != 8) {
+                    num_failed_tests_local++;
+                }
+
+                // Loop nodes
+                for (const auto& n : elem) {
+                    // -- Check if each node id is reasonable -----------------
+                    if (n >= num_nodes_active) {
+                        num_failed_tests_local++;
+                    }
+                }
+
+                // -- Check if there are duplicate elements -------------------
+                const auto it = elems.find(elem);
+                if (it != elems.end()) {
+                    num_failed_tests_local++;
+                }
+                elems.insert(elem);
+
+                // Loop faces and count shared faces
+                for (int f = 0; f < 6; ++f) {
+                    // Set nodes and sort
+                    const std::size_t n0 =
+                        conn[8 * e + face_indices[4 * f + 0]];
+                    const std::size_t n1 =
+                        conn[8 * e + face_indices[4 * f + 1]];
+                    const std::size_t n2 =
+                        conn[8 * e + face_indices[4 * f + 2]];
+                    const std::size_t n3 =
+                        conn[8 * e + face_indices[4 * f + 3]];
+                    std::vector<std::size_t> face = {n0, n1, n2, n3};
+                    std::sort(face.begin(), face.end());
+
+                    // Find current face
+                    const auto it = faces.find(face);
+                    if (it != faces.end()) {
+                        // If face already exists, increment and move to
+                        // next face
+                        it->second++;
+                        continue;
+                    }
+                    faces.insert({face, 1});
+                }
+            }
+
+            // -- Check if each face is found at most 2 times -----------------
+            for (const auto& [_, value] : faces) {
+                if (value > 2) {
+                    num_failed_tests_local++;
+                }
+            }
+        }
+
+        // Set root (rank 0)
+        const int root = 0;
+
+        // Collect results
+        int num_failed_tests_global;
+        pwr::MPIUtilities::ReduceSum(num_failed_tests_local,
+                                     num_failed_tests_global, root);
+
+        // Only check on root (rank 0)
+        if (rank == root) {
+            REQUIRE(num_failed_tests_global == 0);
+        }
+
+    }  // Local element connectivity
 
     // ------------------------------------------------------------------------
     // Nodal ownership

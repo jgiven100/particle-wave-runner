@@ -98,6 +98,13 @@ class Mesh : public MeshBase {
         return elem_id_global_;
     }
 
+    // Get local element id
+    const std::unordered_map<std::size_t, std::size_t>& GetElemIdLocal()
+        const override {
+        assert(setup_complete_);
+        return elem_id_local_;
+    }
+
     // Get global element-wise connectivity
     const std::vector<std::size_t>& GetElemConnGlobal() const override {
         assert(setup_complete_);
@@ -390,10 +397,13 @@ class Mesh : public MeshBase {
     double dz_;
 
     // Neighborhood width
-    std::size_t neighborhood_width_ = 1;  // p=1 B-Spline (linear)
-    // std::size_t neighborhood_width_ = 2; // p=2 B-Spline (quadratic)
-    // std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
-    // std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
+    const std::size_t neighborhood_width_ = 1;  // p=1 B-Spline (linear)
+    // const std::size_t neighborhood_width_ = 2; // p=2 B-Spline (quadratic)
+    // const std::size_t neighborhood_width_ = 2; // p=3 B-Spline (cubic)
+    // const std::size_t neighborhood_width_ = 3; // p=4 B-Spline (quartic)
+
+    // Number of neighbors per element
+    std::size_t num_neighbors_;
 
     // Partitions start vector
     // Size: 3 * (total number of MPI ranks)
@@ -430,7 +440,7 @@ class Mesh : public MeshBase {
     std::vector<std::size_t> elem_index_global_;
 
     // Element neighborhood
-    // Size: (num_neighbors * num_elem_partition_),
+    // Size: (num_neighbors * num_elem_total_),
     // where num_neighbors = (2 * neighborhood_width_ + 1) ^ 3 - 1
     // Flat convention: [e0n0,e0n1,...,e0nN,e1n0,e1n1,...,e1nN,...]
     std::vector<std::size_t> elem_neighborhood_;

@@ -34,6 +34,10 @@ class MeshBase {
     // Get global element id
     virtual const std::vector<std::size_t>& GetElemIdGlobal() const = 0;
 
+    // Get local element id
+    virtual const std::unordered_map<std::size_t, std::size_t>& GetElemIdLocal()
+        const = 0;
+
     // Get global element-wise connectivity
     virtual const std::vector<std::size_t>& GetElemConnGlobal() const = 0;
 
