@@ -23,7 +23,7 @@ void ParticlePoisson::SetContainingElement_() {
     eid_global_ = mesh_->FindContainingElemIdGlobal(coords_global_);
 
     // Grab map from global-to-local element id
-    const auto& elem_id_local = mesh->GetElemIdLocal();
+    const auto& elem_id_local = mesh_->GetElemIdLocal();
 
     // Find corresponding local element id
     const auto it = elem_id_local.find(eid_global_);
